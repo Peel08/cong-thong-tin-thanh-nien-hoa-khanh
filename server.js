@@ -266,14 +266,11 @@ const server = http.createServer(async (req, res) => {
         console.warn(`[Gửi Gmail background cho ${email}]:`, err.message);
       });
 
-      // 3. Phản hồi NGAY LẬP TỨC (chỉ mất ~5ms)
+      // 3. Phản hồi thành công BẢO MẬT (TUYỆT ĐỐI KHÔNG TRẢ VỀ MÃ OTP RA CLIENT)
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         success: true,
-        message: `Mã OTP đã được gửi đến hộp thư Gmail (${email})! Vui lòng kiểm tra Hộp thư đến hoặc thư Rác/Spam.`,
-        mode: 'smtp',
-        otp: otpCode,
-        debugOtp: otpCode,
+        message: `Mã OTP bảo mật 06 chữ số đã được gửi đến hộp thư Gmail (${email})! Vui lòng mở Gmail (kiểm tra Hộp thư đến hoặc thư Rác/Spam) để lấy mã.`,
         expiresInSeconds: 300
       }));
     } catch (err) {

@@ -657,26 +657,26 @@ function initAuthSystem() {
         clearTimeout(fetchTimer);
 
         if (res.success) {
-          const otpCode = res.otp || res.debugOtp || '';
-          showToast(`✅ Đã gửi mã OTP đến ${email}!`, 'success');
+          showToast(`✅ Đã gửi mã OTP đến hộp thư Gmail ${email}!`, 'success');
           if (otpStatusEl) {
             otpStatusEl.style.display = 'block';
             otpStatusEl.style.color = '#4ade80';
-            otpStatusEl.innerHTML = `✅ Đã gửi email đến <strong>${email}</strong>! Mã xác thực: <strong style="font-size: 1.05rem; color: #ffcc00; letter-spacing: 3px; background: rgba(0,0,0,0.35); padding: 2px 7px; border-radius: 4px;">${otpCode}</strong> (Đã tự động điền)`;
+            otpStatusEl.innerHTML = `✅ Đã gửi mã OTP đến hộp thư <strong>${email}</strong>!<br>📩 Vui lòng mở ứng dụng Gmail <em>(kiểm tra Hộp thư đến hoặc thư Rác/Spam)</em> để lấy mã xác thực 06 chữ số.`;
           }
 
-          // Tự động điền mã OTP vào ô nhập và focus
+          // Xóa trống ô nhập mã để người dùng bảo mật tự nhập mã từ Gmail
           const otpInput = document.getElementById('reg-otp');
-          if (otpInput && otpCode) {
-            otpInput.value = otpCode;
-            otpInput.style.borderColor = '#10b981';
-            otpInput.style.color = '#10b981';
-            otpInput.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
+          if (otpInput) {
+            otpInput.value = '';
+            otpInput.placeholder = '• • • • • •';
+            otpInput.style.borderColor = '#38bdf8';
+            otpInput.style.color = '#38bdf8';
+            otpInput.style.boxShadow = 'none';
             otpInput.focus();
           }
 
-          // Bộ đếm ngược gửi lại 20 giây
-          let secondsLeft = 20;
+          // Bộ đếm ngược gửi lại 30 giây
+          let secondsLeft = 30;
           if (otpTimerBadge) otpTimerBadge.textContent = `Gửi lại sau ${secondsLeft}s`;
           btnSendRegOtp.textContent = `⏳ ${secondsLeft}s`;
           btnSendRegOtp.disabled = true;
