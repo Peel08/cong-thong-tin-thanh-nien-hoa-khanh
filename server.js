@@ -87,9 +87,10 @@ async function sendGmailOtp(toEmail, otpCode, purpose = "Đăng ký tài khoản
               ⚠️ <strong>Lưu ý bảo mật:</strong> Tuyệt đối không chia sẻ mã này cho bất kỳ ai. Nếu không phải đồng chí yêu cầu mã này, vui lòng bỏ qua thư này.
             </p>
           </div>
-          <div style="background: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
-            Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh - Huyện Đức Hòa / Tỉnh Tây Ninh<br>
-            Hotline: ${db.organization?.phone || '0947463036'} | Email: ${senderEmail}
+          <div style="background: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.6;">
+            <strong>Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh - Tỉnh Tây Ninh</strong><br>
+            Hotline: ${db.organization?.phone || '0947463036'} | Email: ${senderEmail}<br>
+            <span style="display: inline-block; margin-top: 6px; color: #0284c7; font-weight: 600;">💡 Hệ thống được nghiên cứu và phát triển bởi: <strong style="color: #b45309;">Lương Tấn Phát</strong></span>
           </div>
         </div>
       `;

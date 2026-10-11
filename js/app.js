@@ -552,6 +552,14 @@ function initAuthSystem() {
       e.preventDefault();
       formLogin.style.display = 'none';
       formReg.style.display = 'block';
+      // Xóa sạch giá trị input để không bị autofill nhầm admin
+      formReg.reset();
+      const emailInput = document.getElementById('reg-email');
+      if (emailInput) emailInput.value = '';
+      const pwdInput = document.getElementById('reg-password');
+      if (pwdInput) pwdInput.value = '';
+      const otpInput = document.getElementById('reg-otp');
+      if (otpInput) otpInput.value = '';
     });
   }
 
@@ -601,12 +609,29 @@ function initAuthSystem() {
   if (btnSendRegOtp) {
     btnSendRegOtp.addEventListener('click', async () => {
       const emailInput = document.getElementById('reg-email');
-      const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+      let email = emailInput ? emailInput.value.trim().toLowerCase() : '';
       const fullName = (document.getElementById('reg-fullname')?.value || '').trim();
+
+      // Cảnh báo nếu gõ nhầm tài khoản "admin" vào ô Gmail
+      if (email === 'admin') {
+        showToast('⚠️ "admin" là tài khoản Quản trị! Vui lòng nhập Gmail của đồng chí để nhận mã xác thực.', 'warning');
+        if (emailInput) {
+          emailInput.value = '';
+          emailInput.focus();
+        }
+        return;
+      }
+
+      // Tự động bổ sung đuôi @gmail.com nếu người dùng chỉ gõ tên không có dấu @
+      if (email && !email.includes('@')) {
+        email = email + '@gmail.com';
+        if (emailInput) emailInput.value = email;
+        showToast(`💡 Đã tự động bổ sung đuôi: ${email}`, 'info');
+      }
 
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!email || !emailRegex.test(email)) {
-        showToast('Vui lòng nhập địa chỉ Gmail chính xác (Ví dụ: doanvien@gmail.com)!', 'warning');
+        showToast('Vui lòng nhập địa chỉ Gmail chính xác (Ví dụ: luongtanphat07082006@gmail.com)!', 'warning');
         if (emailInput) emailInput.focus();
         return;
       }
@@ -694,7 +719,17 @@ function initAuthSystem() {
       const fullName = document.getElementById('reg-fullname').value.trim();
       const phone = document.getElementById('reg-phone').value.trim();
       const hamlet = document.getElementById('reg-hamlet').value;
-      const email = document.getElementById('reg-email').value.trim().toLowerCase();
+      let email = document.getElementById('reg-email').value.trim().toLowerCase();
+      if (email === 'admin') {
+        showToast('⚠️ "admin" là tài khoản Quản trị, không phải địa chỉ Gmail!', 'warning');
+        document.getElementById('reg-email')?.focus();
+        return;
+      }
+      if (email && !email.includes('@')) {
+        email = email + '@gmail.com';
+        document.getElementById('reg-email').value = email;
+      }
+
       const otp = document.getElementById('reg-otp').value.trim();
       const password = document.getElementById('reg-password').value.trim();
       const btnSubmit = document.getElementById('btn-submit-reg');

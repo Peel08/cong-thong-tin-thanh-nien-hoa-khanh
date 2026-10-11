@@ -539,8 +539,13 @@
       </div>
 
       <div class="footer-bottom">
-        <div>© 2026 Bản quyền thuộc Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh, tỉnh Tây Ninh.</div>
-        <div style="display: flex; gap: 14px;">
+        <div>
+          <div>© 2026 Bản quyền thuộc Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh, tỉnh Tây Ninh.</div>
+          <div style="margin-top: 5px; font-size: 0.82rem; color: #bae6fd;">
+            💡 Hệ thống được nghiên cứu và phát triển bởi: <strong style="color: #ffcc00; font-weight: 800;">Lương Tấn Phát</strong>
+          </div>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: center;">
           <a href="admin.html" style="color: var(--union-gold);">⚙️ Bảng Quản trị CMS</a>
           <a href="#top" style="color: var(--union-cyan);">↑ Về đầu trang</a>
         </div>
@@ -756,18 +761,18 @@
     <div class="modal-box" style="max-width: 440px; padding: 26px; background: #030e20; border: 1px solid rgba(56,189,248,0.35); border-radius: 16px; box-shadow: 0 16px 50px rgba(0,0,0,0.85);">
       <button class="modal-close-btn" id="close-auth-modal" aria-label="Đóng">✕</button>
 
-      <div style="text-align: center; margin-bottom: 18px;">
-        <img src="assets/images/logo.png" alt="Huy hiệu Đoàn" style="width: 52px; height: 56px; object-fit: contain; margin-bottom: 6px;">
-        <h3 id="auth-modal-title" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0;">CỔNG DỊCH VỤ ĐOÀN VIÊN</h3>
-        <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 3px;">Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh - Tỉnh Tây Ninh</p>
+      <div style="text-align: center; margin-bottom: 12px;">
+        <img src="assets/images/logo.png" alt="Huy hiệu Đoàn" style="width: 46px; height: 50px; object-fit: contain; margin-bottom: 4px;">
+        <h3 id="auth-modal-title" style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">CỔNG DỊCH VỤ ĐOÀN VIÊN</h3>
+        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh - Tỉnh Tây Ninh</p>
       </div>
 
       <!-- TAB CHUYỂN ĐỔI: ĐOÀN VIÊN / ADMIN -->
-      <div style="display: flex; gap: 6px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; margin-bottom: 16px;">
-        <button type="button" class="auth-tab-btn active" id="tab-auth-member" style="flex: 1; padding: 8px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: var(--union-blue); color: #fff;">
+      <div style="display: flex; gap: 6px; background: rgba(255,255,255,0.06); padding: 3px; border-radius: 8px; margin-bottom: 12px;">
+        <button type="button" class="auth-tab-btn active" id="tab-auth-member" style="flex: 1; padding: 7px; font-size: 0.8rem; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; background: var(--union-blue); color: #fff;">
           👤 Đoàn Viên
         </button>
-        <button type="button" class="auth-tab-btn" id="tab-auth-admin" style="flex: 1; padding: 8px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: #94a3b8;">
+        <button type="button" class="auth-tab-btn" id="tab-auth-admin" style="flex: 1; padding: 7px; font-size: 0.8rem; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; background: transparent; color: #94a3b8;">
           ⚙️ Quản Trị Viên (Admin)
         </button>
       </div>
@@ -775,36 +780,39 @@
       <!-- FORM 1: ĐOÀN VIÊN (ĐĂNG NHẬP HOẶC ĐĂNG KÝ) -->
       <div id="auth-member-panel">
         <!-- Form Đăng nhập Đoàn viên -->
-        <form id="form-member-login">
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Số điện thoại / Tên đăng nhập *</label>
-            <input type="text" id="member-login-username" class="form-input" placeholder="Ví dụ: 0947463036" required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+        <form id="form-member-login" autocomplete="off">
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label" style="font-size: 0.76rem; color: #cbd5e1; margin-bottom: 3px; display: block;">Số điện thoại / Tên đăng nhập *</label>
+            <input type="text" id="member-login-username" class="form-input" placeholder="Ví dụ: 0947463036" required autocomplete="off" style="width: 100%; padding: 8px 11px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.85rem;">
           </div>
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Mật khẩu *</label>
-            <input type="password" id="member-login-password" class="form-input" placeholder="Nhập mật khẩu..." required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" style="font-size: 0.76rem; color: #cbd5e1; margin-bottom: 3px; display: block;">Mật khẩu *</label>
+            <input type="password" id="member-login-password" class="form-input" placeholder="Nhập mật khẩu..." required autocomplete="current-password" style="width: 100%; padding: 8px 11px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.85rem;">
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-weight: 700; font-size: 0.9rem;">
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; font-weight: 700; font-size: 0.88rem;">
             Đăng Nhập Đoàn Viên
           </button>
-          <div style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: #94a3b8;">
+          <div style="text-align: center; margin-top: 10px; font-size: 0.78rem; color: #94a3b8;">
             Chưa có tài khoản? <a href="#" id="link-show-register" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">Đăng ký tài khoản mới</a>
           </div>
         </form>
 
         <!-- Form Đăng ký Đoàn viên (Mặc định ẩn) -->
-        <form id="form-member-register" style="display: none;">
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Họ và tên Đoàn viên *</label>
-            <input type="text" id="reg-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn An" required style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
+        <form id="form-member-register" style="display: none;" autocomplete="off">
+          <div style="display: flex; gap: 8px; margin-bottom: 7px;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.74rem; color: #cbd5e1; margin-bottom: 2px; display: block;">Họ và tên *</label>
+              <input type="text" id="reg-fullname" name="reg_new_fullname" class="form-input" placeholder="Nguyễn Văn An" required autocomplete="off" style="width: 100%; padding: 6px 9px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.82rem;">
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.74rem; color: #cbd5e1; margin-bottom: 2px; display: block;">Số điện thoại *</label>
+              <input type="tel" id="reg-phone" name="reg_new_phone" class="form-input" placeholder="0947463036" required autocomplete="off" style="width: 100%; padding: 6px 9px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.82rem;">
+            </div>
           </div>
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Số điện thoại (dùng liên hệ / đăng nhập) *</label>
-            <input type="tel" id="reg-phone" class="form-input" placeholder="Ví dụ: 0947463036" required style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
-          </div>
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Chi đoàn / Ấp trực thuộc *</label>
-            <select id="reg-hamlet" class="form-select" style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
+
+          <div class="form-group" style="margin-bottom: 7px;">
+            <label class="form-label" style="font-size: 0.74rem; color: #cbd5e1; margin-bottom: 2px; display: block;">Chi đoàn / Ấp trực thuộc *</label>
+            <select id="reg-hamlet" class="form-select" style="width: 100%; padding: 6px 9px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.82rem;">
               <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
               <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
               <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
@@ -818,66 +826,83 @@
           </div>
 
           <!-- BẢO MẬT OTP GMAIL (BẮT BUỘC) -->
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+          <div class="form-group" style="margin-bottom: 7px;">
+            <label class="form-label" style="font-size: 0.74rem; color: #cbd5e1; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center;">
               <span>Địa chỉ Gmail nhận mã OTP bảo mật *</span>
-              <span style="color: #38bdf8; font-size: 0.72rem; font-weight: 600;">🔒 Bảo mật 2 lớp</span>
+              <span style="color: #38bdf8; font-size: 0.68rem; font-weight: 600;">🔒 Bảo mật 2 lớp</span>
             </label>
             <div style="display: flex; gap: 6px;">
-              <input type="email" id="reg-email" class="form-input" placeholder="Ví dụ: doanvien@gmail.com" required style="flex: 1; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
-              <button type="button" id="btn-send-reg-otp" style="padding: 9px 12px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff; font-size: 0.78rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+              <input type="email" id="reg-email" name="reg_new_email_otp" class="form-input" placeholder="Ví dụ: luongtanphat@gmail.com" required autocomplete="off" style="flex: 1; padding: 6px 9px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.82rem;">
+              <button type="button" id="btn-send-reg-otp" style="padding: 6px 11px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff; font-size: 0.74rem; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
                 📩 Lấy mã OTP
               </button>
             </div>
-            <div id="otp-send-status" style="font-size: 0.73rem; margin-top: 5px; display: none; line-height: 1.4;"></div>
+            <div id="otp-send-status" style="font-size: 0.71rem; margin-top: 2px; display: none; line-height: 1.3;"></div>
           </div>
 
           <!-- Ô NHẬP MÃ OTP 06 CHỮ SỐ -->
-          <div class="form-group" style="margin-bottom: 12px; background: rgba(56, 189, 248, 0.05); padding: 10px 12px; border-radius: 10px; border: 1.5px dashed rgba(56, 189, 248, 0.4);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label class="form-label" style="font-size: 0.78rem; color: #38bdf8; font-weight: 700; margin: 0;">
+          <div class="form-group" style="margin-bottom: 7px; background: rgba(56, 189, 248, 0.05); padding: 5px 9px; border-radius: 7px; border: 1px dashed rgba(56, 189, 248, 0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <label class="form-label" style="font-size: 0.73rem; color: #38bdf8; font-weight: 700; margin: 0;">
                 🔑 Mã xác thực OTP (06 chữ số) *
               </label>
-              <span id="otp-timer-badge" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;"></span>
+              <span id="otp-timer-badge" style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;"></span>
             </div>
-            <input type="text" id="reg-otp" class="form-input" maxlength="6" placeholder="• • • • • •" required style="width: 100%; padding: 10px; background: #051326; border: 1.5px solid #38bdf8; color: #38bdf8; border-radius: 8px; font-size: 1.25rem; font-weight: 800; letter-spacing: 6px; text-align: center; font-family: monospace;">
-            <div style="font-size: 0.71rem; color: #64748b; margin-top: 4px;">
-              ⏳ Mã OTP có hiệu lực trong 05 phút. Vui lòng mở Gmail để sao chép mã.
+            <input type="text" id="reg-otp" name="reg_new_otp_code" class="form-input" maxlength="6" placeholder="• • • • • •" required autocomplete="off" style="width: 100%; padding: 4px; background: #051326; border: 1.5px solid #38bdf8; color: #38bdf8; border-radius: 6px; font-size: 1.15rem; font-weight: 800; letter-spacing: 5px; text-align: center; font-family: monospace;">
+            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">
+              ⏳ Mã OTP có hiệu lực trong 05 phút qua Gmail.
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Mật khẩu đăng nhập *</label>
-            <input type="password" id="reg-password" class="form-input" placeholder="Tối thiểu 6 ký tự..." required style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label class="form-label" style="font-size: 0.74rem; color: #cbd5e1; margin-bottom: 2px; display: block;">Mật khẩu đăng nhập *</label>
+            <input type="password" id="reg-password" name="reg_new_password_safe" class="form-input" placeholder="Tối thiểu 6 ký tự..." required autocomplete="new-password" style="width: 100%; padding: 6px 9px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.82rem;">
           </div>
 
-          <button type="submit" id="btn-submit-reg" class="btn btn-success" style="width: 100%; padding: 11px; font-weight: 700; font-size: 0.9rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          <button type="submit" id="btn-submit-reg" class="btn btn-success" style="width: 100%; padding: 8px; font-weight: 700; font-size: 0.86rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
             🛡️ Xác Thực OTP & Đăng Ký Tài Khoản
           </button>
-          <div style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: #94a3b8;">
+          <div style="text-align: center; margin-top: 6px; font-size: 0.76rem; color: #94a3b8;">
             Đã có tài khoản? <a href="#" id="link-show-login" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">Đăng nhập ngay</a>
+          </div>
+
+          <!-- DÒNG GHI NHẬN TÁC GIẢ TRONG FORM -->
+          <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center;">
+            <span style="font-size: 0.73rem; color: #94a3b8;">
+              Hệ thống được nghiên cứu và phát triển bởi: <strong style="color: #ffcc00; font-weight: 800;">Lương Tấn Phát</strong>
+            </span>
           </div>
         </form>
       </div>
 
       <!-- FORM 2: QUẢN TRỊ VIÊN ADMIN -->
       <div id="auth-admin-panel" style="display: none;">
-        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 0.76rem; color: #fca5a5;">
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 8px; margin-bottom: 12px; font-size: 0.75rem; color: #fca5a5;">
           🔒 Khu vực bảo mật dành riêng cho Ban Thường vụ & Cán bộ Quản trị Đoàn xã.
         </div>
-        <form id="form-admin-login">
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Tài khoản Quản trị (Admin) *</label>
-            <input type="text" id="admin-login-username" class="form-input" value="admin" required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+        <form id="form-admin-login" autocomplete="off">
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label" style="font-size: 0.76rem; color: #cbd5e1; margin-bottom: 3px; display: block;">Tài khoản Quản trị (Admin) *</label>
+            <input type="text" id="admin-login-username" class="form-input" value="admin" required autocomplete="off" style="width: 100%; padding: 8px 11px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.85rem;">
           </div>
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Mật khẩu Quản trị *</label>
-            <input type="password" id="admin-login-password" class="form-input" placeholder="Mặc định: admin123" required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" style="font-size: 0.76rem; color: #cbd5e1; margin-bottom: 3px; display: block;">Mật khẩu Quản trị *</label>
+            <input type="password" id="admin-login-password" class="form-input" placeholder="Mặc định: admin123" required autocomplete="current-password" style="width: 100%; padding: 8px 11px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 6px; font-size: 0.85rem;">
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-weight: 700; font-size: 0.9rem; background: linear-gradient(135deg, #da251d 0%, #b91c1c 100%);">
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; font-weight: 700; font-size: 0.88rem; background: linear-gradient(135deg, #da251d 0%, #b91c1c 100%);">
             Đăng Nhập Bảng Điều Khiển CMS
           </button>
         </form>
+      </div>
+
+      <!-- DÒNG GHI NHẬN TÁC GIẢ PHÁT TRIỂN HỆ THỐNG -->
+      <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: rgba(56, 189, 248, 0.08); padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.25);">
+          <span style="font-size: 0.85rem;">👨‍💻</span>
+          <span style="font-size: 0.74rem; color: #bae6fd; font-weight: 500;">
+            Hệ thống được nghiên cứu và phát triển bởi: <strong style="color: #ffcc00; font-weight: 800; letter-spacing: 0.3px;">Lương Tấn Phát</strong>
+          </span>
+        </div>
       </div>
 
     </div>
