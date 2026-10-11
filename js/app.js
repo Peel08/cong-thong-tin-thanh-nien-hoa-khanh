@@ -644,12 +644,17 @@ function initAuthSystem() {
         otpStatusEl.innerHTML = '⚡ Đang kết nối máy chủ gửi mã OTP đến <strong>' + email + '</strong>...';
       }
 
+      const abortCtrl = new AbortController();
+      const fetchTimer = setTimeout(() => abortCtrl.abort(), 8000);
+
       try {
         const res = await fetch('/api/auth/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: abortCtrl.signal,
           body: JSON.stringify({ email, fullName, type: 'register', purpose: 'Đăng ký tài khoản Đoàn viên' })
         }).then(r => r.json());
+        clearTimeout(fetchTimer);
 
         if (res.success) {
           const otpCode = res.otp || res.debugOtp || '';
@@ -701,9 +706,15 @@ function initAuthSystem() {
           }
         }
       } catch (err) {
+        clearTimeout(fetchTimer);
         showToast('Lỗi kết nối máy chủ gửi OTP!', 'warning');
         btnSendRegOtp.disabled = false;
         btnSendRegOtp.textContent = '📩 Lấy mã OTP';
+        if (otpStatusEl) {
+          otpStatusEl.style.display = 'block';
+          otpStatusEl.style.color = '#f87171';
+          otpStatusEl.textContent = '❌ Quá thời gian chờ phản hồi từ máy chủ. Vui lòng bấm thử lại!';
+        }
       }
     });
   }

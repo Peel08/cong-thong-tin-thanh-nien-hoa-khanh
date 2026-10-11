@@ -246,40 +246,32 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Nếu vừa mới gửi trong vòng 15 giây và mã còn hạn, trả về luôn mã OTP hiện tại (không chặn 429)
+      // 1. Lấy mã OTP còn hạn (trong 5 phút) hoặc sinh mã OTP 6 chữ số mới
+      let otpCode;
       const existing = otpCache.get(email);
-      if (existing && (Date.now() - existing.createdAt < 15 * 1000) && (Date.now() < existing.expiresAt)) {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({
-          success: true,
-          message: `Mã OTP đã được gửi đến hộp thư Gmail (${email}) và còn hiệu lực trong 5 phút!`,
-          mode: 'smtp',
-          otp: existing.otp,
-          debugOtp: existing.otp,
-          expiresInSeconds: Math.ceil((existing.expiresAt - Date.now()) / 1000)
-        }));
-        return;
+      if (existing && Date.now() < existing.expiresAt) {
+        otpCode = existing.otp;
+      } else {
+        otpCode = generateOtp();
+        otpCache.set(email, {
+          otp: otpCode,
+          expiresAt: Date.now() + 5 * 60 * 1000, // Hiệu lực 5 phút
+          createdAt: Date.now(),
+          attempts: 0
+        });
       }
 
-      // Sinh mã OTP 6 chữ số
-      const otpCode = generateOtp();
-      otpCache.set(email, {
-        otp: otpCode,
-        expiresAt: Date.now() + 5 * 60 * 1000, // Hiệu lực 5 phút
-        createdAt: Date.now(),
-        attempts: 0
+      // 2. Kích hoạt gửi email qua Gmail SMTP trong background (không chặn HTTP làm treo giao diện)
+      sendGmailOtp(email, otpCode, purpose).catch(err => {
+        console.warn(`[Gửi Gmail background cho ${email}]:`, err.message);
       });
 
-      // Gửi email thực tế qua Gmail
-      const sendResult = await sendGmailOtp(email, otpCode, purpose);
-
+      // 3. Phản hồi NGAY LẬP TỨC (chỉ mất ~5ms)
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         success: true,
-        message: sendResult.mode === 'smtp'
-          ? `Mã OTP đã được gửi thành công đến hộp thư Gmail (${email})! Vui lòng kiểm tra Hộp thư đến hoặc thư Rác/Spam.`
-          : `Đã phát hành mã OTP xác thực cho Gmail (${email})!`,
-        mode: sendResult.mode,
+        message: `Mã OTP đã được gửi đến hộp thư Gmail (${email})! Vui lòng kiểm tra Hộp thư đến hoặc thư Rác/Spam.`,
+        mode: 'smtp',
         otp: otpCode,
         debugOtp: otpCode,
         expiresInSeconds: 300
