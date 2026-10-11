@@ -1,0 +1,20 @@
+[
+  { "id": "HK-TH1-01", "name": "Nguyễn Văn An", "hamlet": "Ấp Thuận Hòa 1", "role": "Bí thư Chi đoàn", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-TH1-02", "name": "Lê Thanh Tùng", "hamlet": "Ấp Thuận Hòa 1", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-TH2-01", "name": "Trần Thị Mai Lan", "hamlet": "Ấp Thuận Hòa 2", "role": "Phó Bí thư Chi đoàn", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-TH2-02", "name": "Võ Thị Bích Trâm", "hamlet": "Ấp Thuận Hòa 2", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-BL-01", "name": "Lê Hoàng Minh", "hamlet": "Ấp Bình Lợi", "role": "Bí thư Chi đoàn", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-BL-02", "name": "Đỗ Minh Khang", "hamlet": "Ấp Bình Lợi", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-BT-01", "name": "Phạm Thị Cẩm Tú", "hamlet": "Ấp Bình Thủy", "role": "UV BCH Chi đoàn", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-BT-02", "name": "Nguyễn Hoàng Oanh", "hamlet": "Ấp Bình Thủy", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-GN-01", "name": "Huỳnh Quốc Dũng", "hamlet": "Ấp Giồng Ngang", "role": "Đoàn viên tiêu biểu", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-GN-02", "name": "Trần Hữu Phước", "hamlet": "Ấp Giồng Ngang", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-HT-01", "name": "Đặng Mỹ Duyên", "hamlet": "Ấp Hóc Thơm", "role": "Phụ trách Thiếu nhi", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-HT-02", "name": "Bùi Tuyết Nhi", "hamlet": "Ấp Hóc Thơm", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-LT-01", "name": "Võ Văn Hùng", "hamlet": "Ấp Lập Thành", "role": "Bí thư Chi đoàn", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-LT-02", "name": "Phan Văn Lộc", "hamlet": "Ấp Lập Thành", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-TB-01", "name": "Trương Bảo Ngọc", "hamlet": "Ấp Tân Bình", "role": "Chủ nhiệm CLB Giọt hồng", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-TB-02", "name": "Dương Thị Hồng Thắm", "hamlet": "Ấp Tân Bình", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-XK-01", "name": "Ngô Thanh Phong", "hamlet": "Ấp Xuân Khánh", "role": "Bí thư Chi đoàn", "checkedIn": false, "checkinTime": null },
+  { "id": "HK-XK-02", "name": "Lý Tuấn Kiệt", "hamlet": "Ấp Xuân Khánh", "role": "Đại biểu thanh niên", "checkedIn": false, "checkinTime": null }
+]

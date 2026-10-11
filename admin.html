@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Điều Khiển Quản Trị | Đoàn Xã Hòa Khánh - Tây Ninh</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="admin-sidebar">
+    <div class="admin-brand">
+      <div class="admin-logo-badge">★</div>
+      <div>
+        <h2>ĐOÀN XÃ HÒA KHÁNH</h2>
+        <span>HỆ THỐNG QUẢN TRỊ SỐ</span>
+      </div>
+    </div>
+
+    <ul class="admin-nav-list">
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn active" data-tab="tab-overview">
+          <span class="nav-icon">📊</span> Tổng quan số liệu
+        </button>
+      </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-org">
+          <span class="nav-icon">🏛️</span> Thông tin Đoàn xã
+        </button>
+      </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-youth">
+          <span class="nav-icon">🎖️</span> 09 Gương tiêu biểu 09 ấp
+        </button>
+      </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-products">
+          <span class="nav-icon">📦</span> Sản phẩm OCOP & Nông sản
+        </button>
+      </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-volunteers">
+          <span class="nav-icon">🤝</span> Đăng ký tình nguyện
+          <span class="badge-count" id="badge-vol-count">0</span>
+        </button>
+      </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-ideas">
+          <span class="nav-icon">💡</span> Hòm thư hiến kế
+          <span class="badge-count" id="badge-idea-count">0</span>
+        </button>
+      </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-attendance">
+          <span class="nav-icon">📷</span> Điểm danh AI FaceID
+        </button>
+      </li>
+    </ul>
+
+    <div class="admin-sidebar-footer">
+      <a href="index.html" class="btn btn-secondary" style="width: 100%; font-size: 0.85rem;">
+        🌐 Xem Cổng Thông Tin
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN ADMIN CONTENT -->
+  <main class="admin-main">
+    
+    <!-- HEADER BAR -->
+    <div class="admin-header-bar">
+      <div class="admin-title-group">
+        <h1 id="admin-page-title">Tổng quan số liệu</h1>
+        <p>Cơ sở dữ liệu lưu trữ vĩnh viễn Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh, tỉnh Tây Ninh (Sau sáp nhập 01/07/2025)</p>
+      </div>
+
+      <div>
+        <button class="btn btn-primary" id="btn-sync-refresh">
+          🔄 Đồng bộ dữ liệu
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 1: TỔNG QUAN HỆ THỐNG
+         ========================================================================= -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon">👥</div>
+          <div class="admin-stat-info">
+            <div class="num" id="stat-ov-volunteers">0</div>
+            <div class="lbl">Tình nguyện viên đã đăng ký</div>
+          </div>
+        </div>
+
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon">💡</div>
+          <div class="admin-stat-info">
+            <div class="num" id="stat-ov-ideas">0</div>
+            <div class="lbl">Sáng kiến hiến kế tiếp nhận</div>
+          </div>
+        </div>
+
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon">📦</div>
+          <div class="admin-stat-info">
+            <div class="num" id="stat-ov-products">0</div>
+            <div class="lbl">Mô hình sản phẩm OCOP</div>
+          </div>
+        </div>
+
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon">📷</div>
+          <div class="admin-stat-info">
+            <div class="num" id="stat-ov-checkedin">0 / 18</div>
+            <div class="lbl">Đại biểu FaceID có mặt</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h2>📌 Hướng dẫn dành cho Ban Thường vụ Đoàn xã</h2>
+        </div>
+        <p style="color: #cbd5e1; margin-bottom: 14px;">
+          Toàn bộ dữ liệu bạn chỉnh sửa tại đây được lưu trữ <strong>vĩnh viễn trong máy chủ</strong>. Bất cứ khi nào bạn thay đổi thông tin 09 gương thanh niên, thêm sản phẩm hay nhận đăng ký tình nguyện, dữ liệu sẽ được cập nhật đồng bộ ra ngoài trang chủ ngay lập tức.
+        </p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn btn-sm btn-secondary" onclick="switchAdminTab('tab-youth')">
+            ✏️ Quản lý 09 Gương thanh niên 09 ấp
+          </button>
+          <button class="btn btn-sm btn-secondary" onclick="switchAdminTab('tab-volunteers')">
+            📋 Xem danh sách tình nguyện viên
+          </button>
+          <button class="btn btn-sm btn-secondary" onclick="switchAdminTab('tab-attendance')">
+            📷 Quản lý điểm danh đại biểu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 2: THÔNG TIN ĐOÀN XÃ (SAU SÁP NHẬP 01/07/2025)
+         ========================================================================= -->
+    <div class="tab-content" id="tab-org">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h2>Thông tin Hành chính Đoàn xã Hòa Khánh (Tây Ninh)</h2>
+          <span class="status-pill status-green">Sáp nhập theo NQ 1682/NQ-UBTVQH15</span>
+        </div>
+
+        <form id="form-org-settings">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Tên tổ chức Đoàn *</label>
+              <input type="text" id="org-name" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Khẩu hiệu hành động</label>
+              <input type="text" id="org-slogan" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Địa chỉ trụ sở làm việc chính thức *</label>
+            <input type="text" id="org-address" class="form-input" required>
+            <small style="color: var(--admin-muted); font-size: 0.78rem;">
+              Trụ sở chuẩn: Quốc lộ N2, ấp Thuận Hòa 2, xã Hòa Khánh, tỉnh Tây Ninh (sau sáp nhập 01/07/2025)
+            </small>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Số điện thoại / Đường dây nóng *</label>
+              <input type="text" id="org-phone" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Thư điện tử (Email)</label>
+              <input type="email" id="org-email" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Đường dẫn Fanpage Facebook</label>
+              <input type="text" id="org-fanpage" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Đường dẫn Zalo Official Account</label>
+              <input type="text" id="org-zalo" class="form-input">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+            💾 Lưu Thay Đổi Thông Tin Đoàn Xã
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 3: 09 GƯƠNG THANH NIÊN TIÊU BIỂU 09 ẤP
+         ========================================================================= -->
+    <div class="tab-content" id="tab-youth">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h2>Danh sách 09 Gương thanh niên tiêu biểu của 09 Ấp</h2>
+          <span style="font-size: 0.85rem; color: var(--admin-cyan);">Đầy đủ 09 ấp sau sắp xếp địa giới</span>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ảnh</th>
+                <th>Họ và tên</th>
+                <th>Chi đoàn Ấp</th>
+                <th>Danh hiệu vinh danh</th>
+                <th>Lượt thích</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="table-youth-tbody">
+              <!-- Render tự động -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 4: SẢN PHẨM OCOP & NÔNG SẢN THANH NIÊN
+         ========================================================================= -->
+    <div class="tab-content" id="tab-products">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h2>Quản lý Sản phẩm Thanh niên & OCOP</h2>
+          <button class="btn btn-sm btn-primary" id="btn-add-product">
+            + Thêm sản phẩm mới
+          </button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Chủ cơ sở (ĐVTN)</th>
+                <th>Địa bàn ấp</th>
+                <th>Giá bán</th>
+                <th>Chứng nhận</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="table-products-tbody">
+              <!-- Render tự động -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 5: QUẢN LÝ ĐĂNG KÝ TÌNH NGUYỆN
+         ========================================================================= -->
+    <div class="tab-content" id="tab-volunteers">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h2>Danh sách ĐVTN Đăng ký Đội hình Tình nguyện</h2>
+          <button class="btn btn-sm btn-primary" id="btn-export-vol-csv">
+            📥 Xuất Danh Sách Excel (CSV)
+          </button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Họ và tên</th>
+                <th>Số điện thoại</th>
+                <th>Địa bàn ấp</th>
+                <th>Đội hình tình nguyện</th>
+                <th>Kỹ năng / Ghi chú</th>
+                <th>Thời gian đăng ký</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="table-volunteers-tbody">
+              <!-- Render tự động -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 6: HÒM THƯ HIẾN KẾ THANH NIÊN
+         ========================================================================= -->
+    <div class="tab-content" id="tab-ideas">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h2>Sáng kiến & Hiến kế xây dựng quê hương Hòa Khánh</h2>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Người gửi</th>
+                <th>Ấp</th>
+                <th>Tên sáng kiến hiến kế</th>
+                <th>Lĩnh vực</th>
+                <th>Nội dung giải pháp</th>
+                <th>Trạng thái xử lý</th>
+              </tr>
+            </thead>
+            <tbody id="table-ideas-tbody">
+              <!-- Render tự động -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 7: QUẢN LÝ ĐIỂM DANH AI FACEID
+         ========================================================================= -->
+    <div class="tab-content" id="tab-attendance">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h2>Quản lý Danh sách Đại biểu Điểm danh AI FaceID</h2>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm btn-primary" id="btn-export-att-admin">
+              📥 Xuất File Điểm Danh Excel (CSV)
+            </button>
+            <button class="btn btn-sm btn-danger" id="btn-reset-att-admin">
+              ↺ Reset Điểm Danh
+            </button>
+          </div>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mã ĐB</th>
+                <th>Họ và tên</th>
+                <th>Đơn vị (Ấp)</th>
+                <th>Chức vụ</th>
+                <th>Trạng thái</th>
+                <th>Thời gian có mặt</th>
+              </tr>
+            </thead>
+            <tbody id="table-attendance-tbody">
+              <!-- Render tự động -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL CHỈNH SỬA GƯƠNG THANH NIÊN TIÊU BIỂU -->
+  <div class="modal-overlay" id="modal-edit-youth">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="document.getElementById('modal-edit-youth').classList.remove('open')">✕</button>
+      <h3 style="margin-bottom: 16px; color: var(--admin-cyan);">Chỉnh sửa Gương Thanh Niên Tiêu Biểu</h3>
+      
+      <form id="form-edit-youth">
+        <input type="hidden" id="edit-youth-id">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Họ và tên *</label>
+            <input type="text" id="edit-youth-name" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thuộc Chi đoàn Ấp *</label>
+            <select id="edit-youth-hamlet" class="form-select" required>
+              <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
+              <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
+              <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
+              <option value="Ấp Bình Thủy">Ấp Bình Thủy</option>
+              <option value="Ấp Giồng Ngang">Ấp Giồng Ngang</option>
+              <option value="Ấp Hóc Thơm">Ấp Hóc Thơm</option>
+              <option value="Ấp Lập Thành">Ấp Lập Thành</option>
+              <option value="Ấp Tân Bình">Ấp Tân Bình</option>
+              <option value="Ấp Xuân Khánh">Ấp Xuân Khánh</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Chức vụ / Đoàn thể</label>
+            <input type="text" id="edit-youth-role" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Năm sinh</label>
+            <input type="number" id="edit-youth-year" class="form-input" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Danh hiệu vinh danh (Badge) *</label>
+          <input type="text" id="edit-youth-badge" class="form-input" required>
+        </div>
+
+        <!-- Tải ảnh thật từ máy tính -->
+        <div class="form-group">
+          <label class="form-label">Ảnh chân dung đại biểu (Tải từ máy tính lên máy chủ) *</label>
+          <div class="image-upload-wrapper">
+            <img id="edit-youth-img-preview" src="" class="upload-preview-thumb">
+            <input type="file" id="edit-youth-file-input" accept="image/*" class="form-input">
+          </div>
+          <input type="hidden" id="edit-youth-avatar-url">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Thành tích nổi bật *</label>
+          <textarea id="edit-youth-achievement" class="form-textarea" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Câu nói tâm đắc / Phương châm sống</label>
+          <input type="text" id="edit-youth-quote" class="form-input">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          💾 Lưu Cập Nhật Hồ Sơ
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL THÊM / SỬA SẢN PHẨM OCOP -->
+  <div class="modal-overlay" id="modal-edit-product">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="document.getElementById('modal-edit-product').classList.remove('open')">✕</button>
+      <h3 style="margin-bottom: 16px; color: var(--admin-cyan);" id="product-modal-title">Thông tin Sản phẩm</h3>
+      
+      <form id="form-edit-product">
+        <input type="hidden" id="edit-prod-id">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Tên sản phẩm *</label>
+            <input type="text" id="edit-prod-title" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thuộc địa bàn ấp *</label>
+            <select id="edit-prod-hamlet" class="form-select" required>
+              <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
+              <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
+              <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
+              <option value="Ấp Bình Thủy">Ấp Bình Thủy</option>
+              <option value="Ấp Giồng Ngang">Ấp Giồng Ngang</option>
+              <option value="Ấp Hóc Thơm">Ấp Hóc Thơm</option>
+              <option value="Ấp Lập Thành">Ấp Lập Thành</option>
+              <option value="Ấp Tân Bình">Ấp Tân Bình</option>
+              <option value="Ấp Xuân Khánh">Ấp Xuân Khánh</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Chủ mô hình (Đoàn viên) *</label>
+            <input type="text" id="edit-prod-owner" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giá bán *</label>
+            <input type="text" id="edit-prod-price" class="form-input" placeholder="Ví dụ: 55.000đ / kg" required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Chứng nhận (OCOP / VietGAP)</label>
+            <input type="text" id="edit-prod-badge" class="form-input" placeholder="Ví dụ: OCOP 3 Sao">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Số điện thoại / Zalo đặt hàng *</label>
+            <input type="text" id="edit-prod-phone" class="form-input" required>
+          </div>
+        </div>
+
+        <!-- Tải ảnh sản phẩm từ máy tính -->
+        <div class="form-group">
+          <label class="form-label">Ảnh sản phẩm thực tế (Tải từ máy tính lên) *</label>
+          <div class="image-upload-wrapper">
+            <img id="edit-prod-img-preview" src="" class="upload-preview-thumb">
+            <input type="file" id="edit-prod-file-input" accept="image/*" class="form-input">
+          </div>
+          <input type="hidden" id="edit-prod-image-url">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mô tả sản phẩm *</label>
+          <textarea id="edit-prod-desc" class="form-textarea" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          💾 Lưu Sản Phẩm Vào Hệ Thống
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/admin.js"></script>
+</body>
+</html>

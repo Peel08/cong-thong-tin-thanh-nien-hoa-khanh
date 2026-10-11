@@ -1,0 +1,21 @@
+{
+  "name": "cong-thong-tin-thanh-nien-hoa-khanh",
+  "version": "1.0.0",
+  "description": "Cổng thông tin điện tử Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh, tỉnh Tây Ninh",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "doan-thanh-nien",
+    "hoa-khanh",
+    "tay-ninh",
+    "chuyen-doi-so",
+    "faceid-checkin"
+  ],
+  "author": "Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh",
+  "license": "ISC"
+}

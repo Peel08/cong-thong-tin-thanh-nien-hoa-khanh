@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Thông Tin Thanh Niên Xã Hòa Khánh - Tây Ninh | Đoàn TNCS Hồ Chí Minh</title>
+  <meta name="description" content="Cổng thông tin điện tử Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh, tỉnh Tây Ninh (Sau sáp nhập 01/07/2025) - Tiên phong Chuyển đổi số, Khởi nghiệp, Gương thanh niên tiêu biểu 09 ấp và Điểm danh AI thông minh.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/face-checkin.css">
+</head>
+<body>
+
+  <!-- 1. THANH THÔNG BÁO TIN NỔI BẬT ĐẦU TRANG -->
+  <aside class="top-notice-bar" aria-label="Thông báo sự kiện">
+    <div class="container top-notice-content">
+      <div class="top-notice-marquee">
+        <span class="top-notice-tag">SỰ KIỆN NỔI BẬT</span>
+        <span>✨ Chào mừng Ra mắt Cổng Thông Tin Thanh Niên Xã Hòa Khánh (Tây Ninh) & Ngày hội Chuyển đổi số 2026!</span>
+      </div>
+      <div class="top-notice-right">
+        <span class="top-notice-link">📞 Hotline: 0276.3852.113</span>
+        <a href="admin.html" class="top-notice-link" style="color: #fbbf24; font-weight: 700;">⚙️ Quản trị Admin</a>
+        <a href="#face-checkin-modal" class="top-notice-link open-checkin-btn">⚡ Điểm danh FaceID</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 2. HEADER & MENU ĐIỀU HƯỚNG -->
+  <header class="site-header">
+    <div class="container header-container">
+      <div class="brand-wrapper">
+        <div class="brand-logo-badge" title="Đoàn TNCS Hồ Chí Minh">
+          ★
+        </div>
+        <div class="brand-text">
+          <h1>THANH NIÊN HÒA KHÁNH</h1>
+          <p>TỈNH TÂY NINH (SÁP NHẬP 01/07/2025)</p>
+        </div>
+      </div>
+
+      <nav aria-label="Điều hướng chính">
+        <ul class="nav-menu" id="main-nav-menu">
+          <li class="nav-item"><a href="#home" class="nav-link active">Trang chủ</a></li>
+          <li class="nav-item"><a href="#youth" class="nav-link">Gương tiêu biểu</a></li>
+          <li class="nav-item"><a href="#products" class="nav-link">Sản phẩm OCOP</a></li>
+          <li class="nav-item"><a href="#jobs" class="nav-link">Việc làm - Vốn vay</a></li>
+          <li class="nav-item"><a href="#activities" class="nav-link">Hoạt động</a></li>
+          <li class="nav-item"><a href="#volunteer" class="nav-link">Tình nguyện</a></li>
+          <li class="nav-item"><a href="#ideas" class="nav-link">Hiến kế</a></li>
+          <li class="nav-item"><a href="#digital" class="nav-link">Chuyển đổi số</a></li>
+          <li class="nav-item"><a href="#contact" class="nav-link">Liên hệ</a></li>
+          <li class="nav-item">
+            <a href="#checkin" class="nav-link highlight-btn open-checkin-btn" id="nav-checkin-trigger">
+              📷 Điểm danh FaceID
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="admin.html" class="nav-link" style="border: 1px dashed var(--accent-gold); color: var(--accent-gold); padding: 7px 12px; font-size: 0.82rem;" title="Bảng quản trị cho Ban Thường vụ Đoàn xã">
+              ⚙️ CMS
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <button class="mobile-toggle" id="mobile-menu-toggle" aria-label="Mở menu điều hướng">
+        ☰
+      </button>
+    </div>
+  </header>
+
+  <!-- 3. HERO BANNER CHỦ ĐẠO -->
+  <main>
+    <section id="home" class="hero-section">
+      <div class="container">
+        <div class="hero-banner-card" style="background-image: url('assets/images/hero-banner.jpg');">
+          <div class="hero-overlay"></div>
+          <div class="hero-content">
+            <span class="hero-badge">
+              ⚡ KỶ NGUYÊN SỐ 2026 • ĐOÀN TNCS HỒ CHÍ MINH XÃ HÒA KHÁNH (TÂY NINH)
+            </span>
+            <h2 class="hero-title">
+              TUỔI TRẺ HÒA KHÁNH<br>TIÊN PHONG CHUYỂN ĐỔI SỐ
+            </h2>
+            <p class="hero-subtitle">
+              Không gian số kết nối đoàn viên thanh niên 09 ấp sau sắp xếp sáp nhập, vinh danh 09 gương mặt thanh niên tiêu biểu, quảng bá đặc sản OCOP và nông sản sạch Tây Ninh, tiếp nhận sáng kiến xây dựng quê hương.
+            </p>
+            <div class="hero-actions">
+              <button class="btn btn-primary open-checkin-btn" id="hero-btn-checkin">
+                ⚡ Trải nghiệm Điểm danh AI FaceID
+              </button>
+              <a href="#volunteer" class="btn btn-secondary">
+                🤝 Đăng ký Tình nguyện viên
+              </a>
+              <a href="#ideas" class="btn btn-secondary">
+                💡 Gửi Ý tưởng Hiến kế
+              </a>
+              <a href="admin.html" class="btn btn-secondary" style="border-color: var(--accent-gold); color: var(--accent-gold);">
+                ⚙️ Bảng Quản Trị Đoàn Xã
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- THỐNG KÊ NHANH -->
+        <div class="quick-stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+              <div class="stat-number" id="stat-members">620</div>
+              <div class="stat-label">Đoàn viên thanh niên</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏘️</div>
+            <div class="stat-info">
+              <div class="stat-number" id="stat-hamlets">09</div>
+              <div class="stat-label">Chi đoàn Ấp vững mạnh</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🚩</div>
+            <div class="stat-info">
+              <div class="stat-number" id="stat-squads">06</div>
+              <div class="stat-label">Đội hình tình nguyện số</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🌟</div>
+            <div class="stat-info">
+              <div class="stat-number" id="stat-projects">24</div>
+              <div class="stat-label">Công trình thanh niên 2026</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. TRUNG TÂM TRUY CẬP NHANH (QUICK ACTIONS HUB) -->
+    <section class="section" style="padding-top: 20px;">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <span class="section-badge">CỔNG TIỆN ÍCH TRỰC TUYẾN</span>
+            <h2 class="section-title">TRUY CẬP NHANH TÍNH NĂNG</h2>
+            <p class="section-subtitle">Tất cả thông tin, dịch vụ số và cơ sở dữ liệu thật của Đoàn xã Hòa Khánh được đồng bộ trên một nền tảng</p>
+          </div>
+        </div>
+
+        <div class="quick-hub-grid">
+          <a href="#youth" class="quick-action-card">
+            <div class="quick-action-icon">🏅</div>
+            <h3>09 Gương Tiêu Biểu</h3>
+            <p>Vinh danh 09 tấm gương sáng đại diện cho sức trẻ 09 ấp trên địa bàn xã Hòa Khánh, tỉnh Tây Ninh.</p>
+            <div class="quick-action-arrow">Khám phá ngay →</div>
+          </a>
+
+          <a href="#products" class="quick-action-card">
+            <div class="quick-action-icon">📦</div>
+            <h3>Sản Phẩm OCOP & Đặc Sản</h3>
+            <p>Quảng bá bánh tráng phơi sương, muối tôm thảo mộc, mãng cầu Tây Ninh và nông sản VietGAP.</p>
+            <div class="quick-action-arrow">Xem sản phẩm →</div>
+          </a>
+
+          <a href="#jobs" class="quick-action-card">
+            <div class="quick-action-icon">💼</div>
+            <h3>Việc Làm & Vốn Khởi Nghiệp</h3>
+            <p>Kết nối cơ hội nghề nghiệp tại chỗ và thông tin các gói vay vốn ưu đãi Ngân hàng CSXH.</p>
+            <div class="quick-action-arrow">Tra cứu việc làm →</div>
+          </a>
+
+          <a href="#volunteer" class="quick-action-card">
+            <div class="quick-action-icon">🤝</div>
+            <h3>Đăng Ký Đội Hình Tình Nguyện</h3>
+            <p>Đăng ký tham gia Chiến dịch Mùa hè xanh, Ngày Chủ nhật xanh, Tổ công nghệ số cộng đồng (Lưu vĩnh viễn).</p>
+            <div class="quick-action-arrow">Điền biểu mẫu →</div>
+          </a>
+
+          <a href="#ideas" class="quick-action-card">
+            <div class="quick-action-icon">💡</div>
+            <h3>Hòm Thư Hiến Kế Thanh Niên</h3>
+            <p>Gửi sáng kiến, ý tưởng và giải pháp công nghệ góp phần xây dựng xã Hòa Khánh ngày càng giàu đẹp.</p>
+            <div class="quick-action-arrow">Gửi ý tưởng →</div>
+          </a>
+
+          <a href="#face-checkin-modal" class="quick-action-card open-checkin-btn">
+            <div class="quick-action-icon">📷</div>
+            <h3>Điểm Danh AI Thông Minh</h3>
+            <p>Nhận diện khuôn mặt FaceID thời gian thực và quét mã QR thẻ đại biểu phục vụ hội nghị và đại hội.</p>
+            <div class="quick-action-arrow" style="color: #10b981;">Bắt đầu quét →</div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CHUYÊN MỤC: 09 GƯƠNG THANH NIÊN TIÊU BIỂU CỦA 09 ẤP (TÂY NINH) -->
+    <section id="youth" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <span class="section-badge">VINH DANH TUỔI TRẺ TIÊN PHONG</span>
+            <h2 class="section-title">09 GƯƠNG THANH NIÊN TIÊU BIỂU 09 ẤP</h2>
+            <p class="section-subtitle">Đại diện cho sức trẻ xung kích, nhiệt huyết, làm kinh tế giỏi và đi đầu trong chuyển đổi số tại 09 ấp của xã Hòa Khánh sau sáp nhập 01/07/2025</p>
+          </div>
+        </div>
+
+        <!-- Bộ lọc 9 Ấp chuẩn sau sắp xếp đơn vị hành chính -->
+        <div class="hamlet-filter-bar">
+          <button class="filter-btn active" data-filter="ALL">Tất cả 09 Ấp</button>
+          <button class="filter-btn" data-filter="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</button>
+          <button class="filter-btn" data-filter="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</button>
+          <button class="filter-btn" data-filter="Ấp Bình Lợi">Ấp Bình Lợi</button>
+          <button class="filter-btn" data-filter="Ấp Bình Thủy">Ấp Bình Thủy</button>
+          <button class="filter-btn" data-filter="Ấp Giồng Ngang">Ấp Giồng Ngang</button>
+          <button class="filter-btn" data-filter="Ấp Hóc Thơm">Ấp Hóc Thơm</button>
+          <button class="filter-btn" data-filter="Ấp Lập Thành">Ấp Lập Thành</button>
+          <button class="filter-btn" data-filter="Ấp Tân Bình">Ấp Tân Bình</button>
+          <button class="filter-btn" data-filter="Ấp Xuân Khánh">Ấp Xuân Khánh</button>
+        </div>
+
+        <!-- Lưới danh sách 9 Gương thanh niên -->
+        <div class="youth-grid" id="youth-grid-container">
+          <!-- Render tự động bởi app.js từ API máy chủ -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CHUYÊN MỤC: SẢN PHẨM THANH NIÊN & MÔ HÌNH KINH TẾ (OCOP TÂY NINH) -->
+    <section id="products" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <span class="section-badge">KINH TẾ THANH NIÊN & OCOP TÂY NINH</span>
+            <h2 class="section-title">SẢN PHẨM THANH NIÊN HÒA KHÁNH</h2>
+            <p class="section-subtitle">Quảng bá các sản phẩm nông sản sạch, đặc sản truyền thống OCOP do đoàn viên thanh niên làm chủ có mã QR truy xuất và liên kết tiêu thụ</p>
+          </div>
+        </div>
+
+        <div class="products-grid" id="products-grid-container">
+          <!-- Render tự động bởi app.js từ API máy chủ -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. CHUYÊN MỤC: KHỞI NGHIỆP - VIỆC LÀM & CHÍNH SÁCH VỐN -->
+    <section id="jobs" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <span class="section-badge">ĐỒNG HÀNH KHỞI NGHIỆP LẬP NGHIỆP</span>
+            <h2 class="section-title">KHỞI NGHIỆP & CƠ HỘI VIỆC LÀM</h2>
+            <p class="section-subtitle">Thông tin tuyển dụng uy tín tại địa phương và chính sách vốn vay ưu đãi ủy thác qua Đoàn Thanh niên</p>
+          </div>
+        </div>
+
+        <div class="jobs-layout">
+          <div>
+            <h3 style="font-size: 1.25rem; margin-bottom: 18px; color: var(--cyber-cyan);">
+              📋 Nhu cầu tuyển dụng lao động trẻ tại địa phương
+            </h3>
+            <div id="jobs-list-container">
+              <!-- Render tự động -->
+            </div>
+          </div>
+
+          <div>
+            <h3 style="font-size: 1.25rem; margin-bottom: 18px; color: var(--accent-gold);">
+              💰 Gói vốn vay hỗ trợ thanh niên
+            </h3>
+            <div id="policies-list-container">
+              <!-- Render tự động -->
+            </div>
+            <div style="background: rgba(13,27,49,0.9); border: 1px dashed var(--cyber-cyan); border-radius: var(--radius-md); padding: 18px; text-align: center;">
+              <p style="font-size: 0.88rem; margin-bottom: 12px; color: #cbd5e1;">Cần tư vấn hồ sơ vay vốn chính sách phát triển mô hình kinh tế?</p>
+              <a href="#contact" class="btn btn-sm btn-primary">Liên hệ Ban Chấp Hành Đoàn Xã</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. CHUYÊN MỤC: HOẠT ĐỘNG ĐOÀN - HỘI -->
+    <section id="activities" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <span class="section-badge">PHONG TRÀO THANH NIÊN SÔI NỔI</span>
+            <h2 class="section-title">HOẠT ĐỘNG ĐOÀN - HỘI NỔI BẬT</h2>
+            <p class="section-subtitle">Theo dõi lịch trình các chiến dịch tình nguyện, hội nghị, phong trào thi đua và các chương trình sắp diễn ra</p>
+          </div>
+        </div>
+
+        <div class="activities-grid" id="activities-grid-container">
+          <!-- Render tự động bởi app.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. CHUYÊN MỤC: ĐĂNG KÝ TÌNH NGUYỆN & HIẾN KẾ THANH NIÊN (FORM SONG SONG, LƯU VĨNH VIỄN) -->
+    <section id="volunteer" class="section">
+      <div class="container">
+        <div class="forms-duo-grid">
+          
+          <!-- FORM 1: ĐĂNG KÝ TÌNH NGUYỆN -->
+          <div class="glass-form-card">
+            <span class="form-header-badge">🤝 ĐOÀN KẾT - CỐNG HIẾN</span>
+            <h3 style="font-size: 1.45rem; margin-bottom: 8px;">ĐĂNG KÝ TÌNH NGUYỆN</h3>
+            <p style="font-size: 0.86rem; color: var(--text-muted); margin-bottom: 22px;">
+              Hãy chung tay cùng tuổi trẻ xã nhà tham gia các đội hình tình nguyện vì an sinh xã hội và chuyển đổi số cộng đồng. Dữ liệu được lưu vĩnh viễn vào hệ thống Đoàn xã.
+            </p>
+
+            <form id="volunteer-reg-form">
+              <div class="form-group">
+                <label class="form-label" for="vol-name">Họ và tên đoàn viên / thanh niên *</label>
+                <input type="text" id="vol-name" class="form-control" placeholder="Ví dụ: Nguyễn Văn Hoàng" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="vol-phone">Số điện thoại / Zalo *</label>
+                <input type="tel" id="vol-phone" class="form-control" placeholder="Ví dụ: 0912 345 678" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="vol-hamlet">Thuộc Chi đoàn / Địa bàn ấp *</label>
+                <select id="vol-hamlet" class="form-control" required>
+                  <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
+                  <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
+                  <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
+                  <option value="Ấp Bình Thủy">Ấp Bình Thủy</option>
+                  <option value="Ấp Giồng Ngang">Ấp Giồng Ngang</option>
+                  <option value="Ấp Hóc Thơm">Ấp Hóc Thơm</option>
+                  <option value="Ấp Lập Thành">Ấp Lập Thành</option>
+                  <option value="Ấp Tân Bình">Ấp Tân Bình</option>
+                  <option value="Ấp Xuân Khánh">Ấp Xuân Khánh</option>
+                  <option value="Chi đoàn Trường học / Khác">Chi đoàn Trường học / Khác</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="vol-squad">Đội hình tình nguyện muốn tham gia *</label>
+                <select id="vol-squad" class="form-control" required>
+                  <option value="Đội hình Chuyển đổi số cộng đồng (Hỗ trợ VNeID & DVC)">Đội hình Chuyển đổi số cộng đồng (Hỗ trợ VNeID & DVC)</option>
+                  <option value="Đội hình Môi trường xanh (Ngày Chủ nhật xanh)">Đội hình Môi trường xanh (Ngày Chủ nhật xanh)</option>
+                  <option value="Đội hình Tiếp sức mùa thi & Ôn tập hè">Đội hình Tiếp sức mùa thi & Ôn tập hè</option>
+                  <option value="Đội hình Hiến máu tình nguyện & Cứu trợ khẩn cấp">Đội hình Hiến máu tình nguyện & Cứu trợ khẩn cấp</option>
+                  <option value="Đội hình Xung kích giữ gìn ANTT & Dân quân">Đội hình Xung kích giữ gìn ANTT & Dân quân</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="vol-skill">Kỹ năng, sở trường (hoặc thời gian rảnh)</label>
+                <input type="text" id="vol-skill" class="form-control" placeholder="Ví dụ: Sử dụng máy tính tốt, quay phim chụp ảnh...">
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Gửi Đăng Ký Tình Nguyện Viên
+              </button>
+            </form>
+          </div>
+
+          <!-- FORM 2: HIẾN KẾ THANH NIÊN HÒA KHÁNH -->
+          <div id="ideas" class="glass-form-card">
+            <span class="form-header-badge" style="color: var(--accent-gold);">💡 SÁNG KIẾN XÂY DỰNG QUÊ HƯƠNG</span>
+            <h3 style="font-size: 1.45rem; margin-bottom: 8px;">HIẾN KẾ THANH NIÊN HÒA KHÁNH</h3>
+            <p style="font-size: 0.86rem; color: var(--text-muted); margin-bottom: 22px;">
+              Mỗi ý tưởng của bạn đều là động lực quý báu để Ban Thường vụ Đoàn xã tham mưu xây dựng địa phương ngày càng giàu đẹp.
+            </p>
+
+            <form id="idea-submit-form">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label class="form-label" for="idea-author">Họ tên người gửi *</label>
+                  <input type="text" id="idea-author" class="form-control" placeholder="Ví dụ: Lê Minh Trí" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="idea-hamlet">Ấp / Đơn vị *</label>
+                  <select id="idea-hamlet" class="form-control">
+                    <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
+                    <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
+                    <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
+                    <option value="Ấp Bình Thủy">Ấp Bình Thủy</option>
+                    <option value="Ấp Giồng Ngang">Ấp Giồng Ngang</option>
+                    <option value="Ấp Hóc Thơm">Ấp Hóc Thơm</option>
+                    <option value="Ấp Lập Thành">Ấp Lập Thành</option>
+                    <option value="Ấp Tân Bình">Ấp Tân Bình</option>
+                    <option value="Ấp Xuân Khánh">Ấp Xuân Khánh</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="idea-title">Tên ý tưởng / Sáng kiến hiến kế *</label>
+                <input type="text" id="idea-title" class="form-control" placeholder="Ví dụ: Số hóa mã QR di tích lịch sử địa phương" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="idea-topic">Lĩnh vực hiến kế</label>
+                <select id="idea-topic" class="form-control">
+                  <option value="Chuyển đổi số & Cải cách hành chính">Chuyển đổi số & Cải cách hành chính</option>
+                  <option value="Phát triển kinh tế & Khởi nghiệp thanh niên">Phát triển kinh tế & Khởi nghiệp thanh niên</option>
+                  <option value="Bảo vệ môi trường & Xây dựng nông thôn mới">Bảo vệ môi trường & Xây dựng nông thôn mới</option>
+                  <option value="Văn hóa thể thao, chăm sóc thiếu nhi">Văn hóa thể thao, chăm sóc thiếu nhi</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="idea-content">Nội dung giải pháp & đề xuất cụ thể *</label>
+                <textarea id="idea-content" class="form-control" placeholder="Mô tả thực trạng, giải pháp thực hiện và lợi ích mang lại cho bà con nhân dân..." required></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-secondary" style="width: 100%; border-color: var(--accent-gold); color: #fff;">
+                🚀 Gửi Ý Tưởng Hiến Kế
+              </button>
+            </form>
+
+            <div style="margin-top: 24px;">
+              <h4 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--cyber-cyan);">💡 Các hiến kế mới đóng góp:</h4>
+              <div id="recent-ideas-feed">
+                <!-- Render tự động -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. CHUYÊN MỤC: CHUYỂN ĐỔI SỐ (DIGITAL TRANSFORMATION TÂY NINH) -->
+    <section id="digital" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <span class="section-badge">KỸ NĂNG SỐ • AI • CÔNG NGHỆ</span>
+            <h2 class="section-title">CHUYỂN ĐỔI SỐ THANH NIÊN</h2>
+            <p class="section-subtitle">Hướng dẫn nộp Dịch vụ công trực tuyến xã Hòa Khánh (Cổng DVC Tây Ninh & Quốc gia), ứng dụng Trí tuệ nhân tạo (AI) và trang bị kỹ năng an toàn thông tin</p>
+          </div>
+        </div>
+
+        <div class="digital-hub-grid" id="digital-hub-container">
+          <!-- Render tự động bởi app.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. CHUYÊN MỤC: LIÊN HỆ ĐOÀN XÃ HÒA KHÁNH (TÂY NINH) -->
+    <section id="contact" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <span class="section-badge">KẾT NỐI VỚI CHÚNG TÔI</span>
+            <h2 class="section-title">LIÊN HỆ ĐOÀN XÃ HÒA KHÁNH</h2>
+            <p class="section-subtitle">Ban Thường vụ Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh luôn lắng nghe và đồng hành cùng mọi ý kiến của đoàn viên thanh niên</p>
+          </div>
+        </div>
+
+        <div class="contact-grid">
+          <div class="contact-info-list">
+            <div class="contact-item">
+              <div class="contact-icon">📍</div>
+              <div>
+                <strong style="display: block; color: #fff;">Địa chỉ cơ quan:</strong>
+                <span>Quốc lộ N2, ấp Thuận Hòa 2, xã Hòa Khánh, tỉnh Tây Ninh (Sau sáp nhập 01/07/2025)</span>
+              </div>
+            </div>
+
+            <div class="contact-item">
+              <div class="contact-icon">📞</div>
+              <div>
+                <strong style="display: block; color: #fff;">Điện thoại liên hệ:</strong>
+                <span>0276.3852.113 (Văn phòng Đoàn xã)</span>
+              </div>
+            </div>
+
+            <div class="contact-item">
+              <div class="contact-icon">✉️</div>
+              <div>
+                <strong style="display: block; color: #fff;">Thư điện tử (Email):</strong>
+                <span>doanxahoakhanh.tayninh@gmail.com</span>
+              </div>
+            </div>
+
+            <div class="contact-item">
+              <div class="contact-icon">🌐</div>
+              <div>
+                <strong style="display: block; color: #fff;">Mạng xã hội & Kênh số:</strong>
+                <span>Fanpage: Tuổi trẻ Xã Hòa Khánh - Tây Ninh | Zalo Official Account</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="qr-box-card">
+            <h3 style="font-size: 1.25rem; margin-bottom: 8px;">QUÉT MÃ KẾT NỐI NHANH</h3>
+            <p style="font-size: 0.86rem; color: var(--text-muted); margin-bottom: 20px;">
+              Dùng Zalo hoặc máy ảnh điện thoại để quét mã kết nối với Kênh thông tin số Đoàn xã Hòa Khánh
+            </p>
+            <div class="qr-code-display">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://zalo.me/tuoitrehoakhanh" alt="QR Code Đoàn xã Hòa Khánh">
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <a href="https://facebook.com" target="_blank" class="btn btn-sm btn-secondary">
+                🔵 Fanpage Facebook
+              </a>
+              <a href="https://zalo.me" target="_blank" class="btn btn-sm btn-primary">
+                💬 Kênh Zalo OA
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 12. FOOTER CHÂN TRANG -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div>
+          <h3 style="font-size: 1.25rem; margin-bottom: 12px; color: #fff;">
+            ĐOÀN TNCS HỒ CHÍ MINH XÃ HÒA KHÁNH (TÂY NINH)
+          </h3>
+          <p style="max-width: 450px; font-size: 0.88rem; line-height: 1.7; color: var(--text-muted);">
+            Thành lập trên cơ sở sắp xếp đơn vị hành chính theo Nghị quyết 1682/NQ-UBTVQH15 từ ngày 01/07/2025. Tiên phong hành động vì một Hòa Khánh văn minh, hiện đại.
+          </p>
+        </div>
+        <div>
+          <h4 style="color: var(--cyber-cyan); font-size: 0.95rem; margin-bottom: 14px;">LIÊN KẾT NHANH</h4>
+          <ul style="list-style: none; font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
+            <li><a href="#youth">09 Gương tiêu biểu 09 ấp</a></li>
+            <li><a href="#products">Sản phẩm OCOP & Nông sản</a></li>
+            <li><a href="#jobs">Cơ hội việc làm & Khởi nghiệp</a></li>
+            <li><a href="admin.html" style="color: var(--accent-gold);">⚙️ Bảng Quản trị Admin CMS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: var(--cyber-cyan); font-size: 0.95rem; margin-bottom: 14px;">HỖ TRỢ KỸ THUẬT</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+            Hệ thống Cổng thông tin, Bảng quản trị và Điểm danh AI FaceID được vận hành bởi Tổ Công nghệ số cộng đồng Đoàn xã Hòa Khánh, tỉnh Tây Ninh.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Bản quyền thuộc Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh, tỉnh Tây Ninh.</div>
+        <div style="display: flex; gap: 14px;">
+          <a href="admin.html" style="color: var(--accent-gold);">⚙️ Bảng Quản trị CMS</a>
+          <a href="#top" style="color: var(--cyber-cyan);">↑ Về đầu trang</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================================
+       MODAL 1: HỆ THỐNG ĐIỂM DANH AI THÔNG MINH (FACE ID & QR CODE SCANNER)
+       ========================================================================= -->
+  <div class="modal-overlay" id="face-checkin-modal" role="dialog" aria-modal="true" aria-labelledby="checkin-title">
+    <div class="modal-box checkin-modal-box">
+      <button class="modal-close-btn" id="close-checkin-modal" aria-label="Đóng cửa sổ">✕</button>
+
+      <div class="checkin-header">
+        <div>
+          <span class="checkin-badge">⚡ CÔNG NGHỆ NHẬN DIỆN THỜI GIAN THỰC</span>
+          <h2 id="checkin-title" style="font-size: 1.45rem; margin-top: 4px;">HỆ THỐNG ĐIỂM DANH AI ĐẠI BIỂU & ĐOÀN VIÊN</h2>
+        </div>
+        
+        <div class="scanner-mode-tab">
+          <button class="mode-btn active" id="tab-mode-face">👤 Quét FaceID</button>
+          <button class="mode-btn" id="tab-mode-qr">📱 Quét Mã QR Thẻ</button>
+        </div>
+      </div>
+
+      <div class="checkin-layout">
+        <!-- Vùng Camera & Hiệu ứng AI Scanner -->
+        <div class="scanner-viewport-wrapper">
+          <div class="camera-container">
+            <video id="checkin-video" autoplay playsinline muted></video>
+
+            <!-- Giao diện Sci-Fi HUD -->
+            <div class="hud-overlay">
+              <div class="hud-corner hud-tl"></div>
+              <div class="hud-corner hud-tr"></div>
+              <div class="hud-corner hud-bl"></div>
+              <div class="hud-corner hud-br"></div>
+
+              <div class="hud-status-badge">
+                <span class="radar-dot"></span>
+                <span id="camera-status-text">AI CAMERA: ĐANG HOẠT ĐỘNG (RADAR ON)</span>
+              </div>
+
+              <!-- Tia laser quét lên xuống -->
+              <div class="radar-sweep-line" id="radar-scan-line"></div>
+
+              <!-- Khung viền mục tiêu khuôn mặt -->
+              <div class="face-reticle" id="face-reticle-box"></div>
+
+              <!-- Khung viền mục tiêu QR Code (ẩn mặc định) -->
+              <div id="qr-scan-box" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 170px; height: 170px; border: 2px dashed #00f2fe; border-radius: 16px;"></div>
+            </div>
+
+            <!-- Popup thông báo điểm danh thành công trên khung camera -->
+            <div class="checkin-success-popup" id="checkin-success-popup">
+              <div class="success-icon-badge">✓</div>
+              <div class="success-delegate-name" id="success-name">Nguyễn Văn An</div>
+              <div class="success-delegate-hamlet" id="success-hamlet">Ấp Thuận Hòa 1 - Bí thư Chi đoàn</div>
+              <div class="success-time-tag" id="success-time">Xác thực FaceID thành công: 08:30:15</div>
+            </div>
+          </div>
+
+          <!-- Thanh điều khiển Scanner -->
+          <div class="scanner-controls">
+            <button class="btn btn-sm btn-primary" id="btn-scan-face">
+              ⚡ Mô phỏng quét nhận diện FaceID
+            </button>
+            <button class="btn btn-sm btn-secondary" id="btn-export-attendance">
+              📥 Xuất File Excel (CSV)
+            </button>
+            <button class="btn btn-sm btn-danger" id="btn-reset-attendance" title="Đặt lại trạng thái">
+              ↺ Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Bảng thống kê tiến độ 9 Ấp & Danh sách điểm danh -->
+        <div class="checkin-roster-panel">
+          <div class="roster-stats-box">
+            <div class="roster-stats-header">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">TIẾN ĐỘ ĐẠI BIỂU CÓ MẶT:</span>
+              <span class="roster-count" id="attendance-count">0 / 18</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="attendance-progress-bar" style="width: 0%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--cyber-cyan); font-weight: 700;">
+              <span>Tỷ lệ tham dự:</span>
+              <span id="attendance-percent">0%</span>
+            </div>
+          </div>
+
+          <!-- Ma trận tiến độ 9 Ấp Hòa Khánh - Tây Ninh -->
+          <div style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">
+            TIẾN ĐỘ THAM DỰ 09 ẤP:
+          </div>
+          <div class="hamlet-matrix-list" id="hamlet-matrix">
+            <!-- 9 ấp được sinh tự động -->
+          </div>
+
+          <!-- Danh sách luồng điểm danh thời gian thực -->
+          <div style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">
+            LỊCH SỬ ĐIỂM DANH GẦN ĐÂY:
+          </div>
+          <div class="roster-stream-container" id="attendance-stream-list">
+            <!-- Tự động cập nhật -->
+          </div>
+
+          <!-- Đăng ký nhanh gương mặt mới -->
+          <form id="quick-enroll-form" style="margin-top: 14px; background: rgba(3,8,18,0.7); padding: 10px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.15); display: flex; gap: 6px; flex-wrap: wrap;">
+            <input type="text" id="enroll-name" placeholder="Tên đại biểu mới..." required style="flex: 1; min-width: 120px; background: #061122; border: 1px solid rgba(0,242,254,0.3); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;">
+            <select id="enroll-hamlet" style="background: #061122; border: 1px solid rgba(0,242,254,0.3); color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.8rem;">
+              <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
+              <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
+              <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
+              <option value="Ấp Bình Thủy">Ấp Bình Thủy</option>
+              <option value="Ấp Giồng Ngang">Ấp Giồng Ngang</option>
+              <option value="Ấp Hóc Thơm">Ấp Hóc Thơm</option>
+              <option value="Ấp Lập Thành">Ấp Lập Thành</option>
+              <option value="Ấp Tân Bình">Ấp Tân Bình</option>
+              <option value="Ấp Xuân Khánh">Ấp Xuân Khánh</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">
+              + Thêm & Điểm danh
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: XEM CHI TIẾT GƯƠNG MẶT / MÃ QR SẢN PHẨM -->
+  <div class="modal-overlay" id="general-detail-modal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <button class="modal-close-btn" id="close-general-modal" aria-label="Đóng">✕</button>
+      <h3 id="general-modal-title" style="font-size: 1.35rem; margin-bottom: 18px; color: var(--cyber-cyan);">Tiêu đề chi tiết</h3>
+      <div id="general-modal-body">
+        <!-- Nội dung đổ động -->
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTAINER CHỨA THÔNG BÁO TOAST TOÀN CỤC -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/data.js"></script>
+  <script src="js/face-checkin.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
