@@ -293,13 +293,21 @@
     </div>
 
     <!-- =========================================================================
-         TAB 6: QUẢN LÝ ĐIỂM DANH AI FACEID
+         TAB 6: QUẢN LÝ ĐIỂM DANH AI FACEID & MÃ QR CÁ NHÂN
          ========================================================================= -->
     <div class="tab-content" id="tab-attendance">
       <div class="admin-card">
-        <div class="admin-card-header">
-          <h2>Quản lý Danh sách Đại biểu Điểm danh AI FaceID</h2>
-          <div style="display: flex; gap: 8px;">
+        <div class="admin-card-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2>Quản lý Danh sách Đại biểu & Dữ liệu Khuôn mặt FaceID / Mã QR</h2>
+            <p style="font-size: 0.85rem; color: var(--admin-muted); margin-top: 4px;">
+              Mỗi đại biểu có dữ liệu ảnh khuôn mặt mẫu để nhận diện FaceID và 01 mã QR cá nhân duy nhất để quét điểm danh tại cổng đại hội.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-success" id="btn-add-delegate-modal">
+              ➕ Đăng Ký Đại Biểu Mới
+            </button>
             <button class="btn btn-sm btn-primary" id="btn-export-att-admin">
               📥 Xuất File Điểm Danh Excel (CSV)
             </button>
@@ -313,12 +321,15 @@
           <table class="data-table">
             <thead>
               <tr>
+                <th style="width: 75px; text-align: center;">Ảnh FaceID</th>
                 <th>Mã ĐB</th>
                 <th>Họ và tên</th>
                 <th>Đơn vị (Ấp)</th>
                 <th>Chức vụ</th>
+                <th style="text-align: center;">Mã QR Cá Nhân</th>
                 <th>Trạng thái</th>
-                <th>Thời gian có mặt</th>
+                <th>Thời gian</th>
+                <th style="text-align: center; min-width: 170px;">Thao tác</th>
               </tr>
             </thead>
             <tbody id="table-attendance-tbody">
@@ -403,9 +414,163 @@
     </div>
   </div>
 
+  <!-- MODAL: ĐĂNG KÝ / CHỈNH SỬA ĐẠI BIỂU & DỮ LIỆU KHUÔN MẶT FACEID -->
+  <div class="modal-overlay" id="modal-delegate-form">
+    <div class="modal-box" style="max-width: 580px;">
+      <button class="modal-close-btn" onclick="closeDelegateModal()">✕</button>
+      <h3 style="margin-bottom: 6px; color: var(--admin-cyan);" id="delegate-modal-title">Đăng Ký Đại Biểu Mới & Cấp Mã QR</h3>
+      <p style="font-size: 0.82rem; color: var(--admin-muted); margin-bottom: 16px;">
+        Hệ thống tự động cấp mã QR định danh và lưu trữ dữ liệu khuôn mặt mẫu để nhận diện FaceID tại kiosk điểm danh.
+      </p>
+
+      <form id="form-delegate-manage">
+        <input type="hidden" id="del-id">
+        <input type="hidden" id="del-avatar-val">
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Mã số Đại biểu (ID) *</label>
+            <input type="text" id="del-code" class="form-input" placeholder="Ví dụ: HK-TH1-03" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Họ và tên Đại biểu *</label>
+            <input type="text" id="del-name" class="form-input" placeholder="Nhập họ và tên..." required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Đơn vị / Chi đoàn trực thuộc *</label>
+            <select id="del-hamlet" class="form-select" required>
+              <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
+              <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
+              <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
+              <option value="Ấp Bình Thủy">Ấp Bình Thủy</option>
+              <option value="Ấp Giồng Ngang">Ấp Giồng Ngang</option>
+              <option value="Ấp Hóc Thơm">Ấp Hóc Thơm</option>
+              <option value="Ấp Lập Thành">Ấp Lập Thành</option>
+              <option value="Ấp Tân Bình">Ấp Tân Bình</option>
+              <option value="Ấp Xuân Khánh">Ấp Xuân Khánh</option>
+              <option value="BCH Đoàn Xã Hòa Khánh">BCH Đoàn Xã Hòa Khánh</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chức vụ trong Đoàn / Đại hội *</label>
+            <input type="text" id="del-role" class="form-input" placeholder="Bí thư, Phó Bí thư, Đại biểu..." required>
+          </div>
+        </div>
+
+        <!-- DỮ LIỆU KHUÔN MẶT FACEID -->
+        <div class="form-group" style="margin-top: 10px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(56,189,248,0.4); border-radius: 12px; padding: 14px;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>📸 Dữ liệu Khuôn mặt (Mẫu nhận diện FaceID) *</span>
+            <span style="font-size: 0.75rem; color: var(--admin-cyan);">Hỗ trợ tải ảnh hoặc chụp trực tiếp</span>
+          </label>
+
+          <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+            <div style="position: relative;">
+              <img id="del-avatar-preview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80" style="width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 2.5px solid var(--admin-cyan); box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+              <div style="display: flex; gap: 8px;">
+                <label for="del-file-input" class="btn btn-sm btn-outline" style="cursor: pointer; flex: 1; text-align: center;">
+                  📁 Tải ảnh từ máy tính
+                </label>
+                <input type="file" id="del-file-input" accept="image/*" style="display: none;">
+                <button type="button" class="btn btn-sm btn-outline" id="btn-toggle-del-webcam" style="flex: 1;">
+                  📷 Mở Camera Chụp
+                </button>
+              </div>
+              <small style="color: var(--admin-muted); font-size: 0.75rem;">
+                Ảnh góc thẳng, rõ mặt để thuật toán FaceID nhận diện chính xác nhất.
+              </small>
+            </div>
+          </div>
+
+          <!-- KHUNG CHỤP ẢNH TỪ WEBCAM TRỰC TIẾP -->
+          <div id="del-webcam-container" style="display: none; margin-top: 12px; text-align: center; background: #020915; border-radius: 8px; padding: 10px; border: 1px solid rgba(56,189,248,0.3);">
+            <div style="position: relative; width: 100%; max-width: 320px; margin: 0 auto; border-radius: 8px; overflow: hidden;">
+              <video id="del-webcam-video" autoplay playsinline style="width: 100%; height: 220px; object-fit: cover; background: #000; border-radius: 6px;"></video>
+              <div style="position: absolute; top: 15%; left: 20%; width: 60%; height: 70%; border: 2px dashed #00f2fe; border-radius: 50%; pointer-events: none;"></div>
+            </div>
+            <div style="margin-top: 10px; display: flex; justify-content: center; gap: 8px;">
+              <button type="button" class="btn btn-sm btn-success" id="btn-capture-del-photo">
+                📸 Chụp Khuôn Mặt Này
+              </button>
+              <button type="button" class="btn btn-sm btn-outline" id="btn-close-del-webcam">
+                Đóng Camera
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 14px; padding: 12px; font-weight: 700;">
+          💾 Lưu Dữ Liệu Đại Biểu & Cấp Mã QR
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: THẺ ĐẠI BIỂU ĐIỆN TỬ & MÃ QR CÁ NHÂN -->
+  <div class="modal-overlay" id="modal-delegate-qr-card">
+    <div class="modal-box" style="max-width: 460px; text-align: center; padding: 24px;">
+      <button class="modal-close-btn" onclick="document.getElementById('modal-delegate-qr-card').classList.remove('open')">✕</button>
+      
+      <!-- BẢN THẺ ĐẠI BIỂU CHÍNH THỨC (CÓ THỂ IN / TẢI VỀ) -->
+      <div id="print-badge-wrapper" class="delegate-badge-card">
+        <!-- Đỉnh thẻ -->
+        <div class="badge-card-header">
+          <img src="assets/images/logo.png" alt="Huy hiệu Đoàn" class="badge-card-logo">
+          <div class="badge-card-header-text">
+            <h4>ĐOÀN TNCS HỒ CHÍ MINH XÃ HÒA KHÁNH</h4>
+            <div class="badge-subtitle">ĐẠI BIỂU HỘI NGHỊ / ĐẠI HỘI ĐOÀN</div>
+          </div>
+        </div>
+
+        <!-- Thân thẻ -->
+        <div class="badge-card-body">
+          <div class="badge-photo-frame">
+            <img id="badge-photo" src="" alt="Ảnh đại biểu" class="badge-photo-img">
+          </div>
+          <h3 id="badge-name" class="badge-name-text">NGUYỄN VĂN AN</h3>
+          <div id="badge-role-hamlet" class="badge-meta-text">Bí thư Chi đoàn • Ấp Thuận Hòa 1</div>
+          
+          <!-- Mã QR cá nhân chính thức -->
+          <div class="badge-qr-container">
+            <div id="badge-qrcode-display" class="badge-qr-box"></div>
+            <div class="badge-code-label" id="badge-code-label">HK-TH1-01</div>
+          </div>
+
+          <div class="badge-security-note">
+            ✓ THẺ ĐẠI BIỂU ĐIỆN TỬ CHÍNH THỨC • QUÉT TẠI CỔNG
+          </div>
+        </div>
+
+        <!-- Đáy thẻ -->
+        <div class="badge-card-footer">
+          XÃ HÒA KHÁNH - TỈNH TÂY NINH
+        </div>
+      </div>
+
+      <!-- CÁC NÚT THAO TÁC VỚI THẺ QR -->
+      <div style="display: flex; gap: 8px; justify-content: center; margin-top: 18px; flex-wrap: wrap;">
+        <button class="btn btn-sm btn-primary" id="btn-download-badge-png">
+          📥 Tải Ảnh Thẻ (PNG)
+        </button>
+        <button class="btn btn-sm btn-outline" id="btn-print-badge">
+          🖨️ In Thẻ
+        </button>
+        <button class="btn btn-sm btn-success" id="btn-quick-test-checkin">
+          ⚡ Quét Thử Mã Này
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
 
   <!-- JavaScript Modules -->
+  <script src="js/lib/qrcode.min.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

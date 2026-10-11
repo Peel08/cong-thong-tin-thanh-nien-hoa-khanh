@@ -252,23 +252,185 @@ window.PORTAL_DATA = {
   ],
 
   attendanceDatabase: [
-    { id: "HK-TH1-01", name: "Nguyễn Văn An", hamlet: "Ấp Thuận Hòa 1", role: "Bí thư Chi đoàn", checkedIn: false },
-    { id: "HK-TH1-02", name: "Lê Thanh Tùng", hamlet: "Ấp Thuận Hòa 1", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-TH2-01", name: "Trần Thị Mai Lan", hamlet: "Ấp Thuận Hòa 2", role: "Phó Bí thư Chi đoàn", checkedIn: false },
-    { id: "HK-TH2-02", name: "Võ Thị Bích Trâm", hamlet: "Ấp Thuận Hòa 2", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-BL-01", name: "Lê Hoàng Minh", hamlet: "Ấp Bình Lợi", role: "Bí thư Chi đoàn", checkedIn: false },
-    { id: "HK-BL-02", name: "Đỗ Minh Khang", hamlet: "Ấp Bình Lợi", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-BT-01", name: "Phạm Thị Cẩm Tú", hamlet: "Ấp Bình Thủy", role: "UV BCH Chi đoàn", checkedIn: false },
-    { id: "HK-BT-02", name: "Nguyễn Hoàng Oanh", hamlet: "Ấp Bình Thủy", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-GN-01", name: "Huỳnh Quốc Dũng", hamlet: "Ấp Giồng Ngang", role: "Đoàn viên tiêu biểu", checkedIn: false },
-    { id: "HK-GN-02", name: "Trần Hữu Phước", hamlet: "Ấp Giồng Ngang", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-HT-01", name: "Đặng Mỹ Duyên", hamlet: "Ấp Hóc Thơm", role: "Phụ trách Thiếu nhi", checkedIn: false },
-    { id: "HK-HT-02", name: "Bùi Tuyết Nhi", hamlet: "Ấp Hóc Thơm", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-LT-01", name: "Võ Văn Hùng", hamlet: "Ấp Lập Thành", role: "Bí thư Chi đoàn", checkedIn: false },
-    { id: "HK-LT-02", name: "Phan Văn Lộc", hamlet: "Ấp Lập Thành", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-TB-01", name: "Trương Bảo Ngọc", hamlet: "Ấp Tân Bình", role: "Chủ nhiệm CLB Giọt hồng", checkedIn: false },
-    { id: "HK-TB-02", name: "Dương Thị Hồng Thắm", hamlet: "Ấp Tân Bình", role: "Đại biểu thanh niên", checkedIn: false },
-    { id: "HK-XK-01", name: "Ngô Thanh Phong", hamlet: "Ấp Xuân Khánh", role: "Bí thư Chi đoàn", checkedIn: false },
-    { id: "HK-XK-02", name: "Lý Tuấn Kiệt", hamlet: "Ấp Xuân Khánh", role: "Đại biểu thanh niên", checkedIn: false }
-  ]
+    {
+        "id": "HK-TH1-01",
+        "name": "Nguyễn Văn An",
+        "hamlet": "Ấp Thuận Hòa 1",
+        "role": "Bí thư Chi đoàn",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-TH1-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-TH1-02",
+        "name": "Lê Thanh Tùng",
+        "hamlet": "Ấp Thuận Hòa 1",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-TH1-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-TH2-01",
+        "name": "Trần Thị Mai Lan",
+        "hamlet": "Ấp Thuận Hòa 2",
+        "role": "Phó Bí thư Chi đoàn",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-TH2-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-TH2-02",
+        "name": "Võ Thị Bích Trâm",
+        "hamlet": "Ấp Thuận Hòa 2",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-TH2-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-BL-01",
+        "name": "Lê Hoàng Minh",
+        "hamlet": "Ấp Bình Lợi",
+        "role": "Bí thư Chi đoàn",
+        "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-BL-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-BL-02",
+        "name": "Đỗ Minh Khang",
+        "hamlet": "Ấp Bình Lợi",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-BL-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-BT-01",
+        "name": "Phạm Thị Cẩm Tú",
+        "hamlet": "Ấp Bình Thủy",
+        "role": "UV BCH Chi đoàn",
+        "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-BT-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-BT-02",
+        "name": "Nguyễn Hoàng Oanh",
+        "hamlet": "Ấp Bình Thủy",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-BT-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-GN-01",
+        "name": "Huỳnh Quốc Dũng",
+        "hamlet": "Ấp Giồng Ngang",
+        "role": "Đoàn viên tiêu biểu",
+        "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-GN-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-GN-02",
+        "name": "Trần Hữu Phước",
+        "hamlet": "Ấp Giồng Ngang",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-GN-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-HT-01",
+        "name": "Đặng Mỹ Duyên",
+        "hamlet": "Ấp Hóc Thơm",
+        "role": "Phụ trách Thiếu nhi",
+        "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-HT-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-HT-02",
+        "name": "Bùi Tuyết Nhi",
+        "hamlet": "Ấp Hóc Thơm",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-HT-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-LT-01",
+        "name": "Võ Văn Hùng",
+        "hamlet": "Ấp Lập Thành",
+        "role": "Bí thư Chi đoàn",
+        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-LT-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-LT-02",
+        "name": "Phan Văn Lộc",
+        "hamlet": "Ấp Lập Thành",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-LT-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-TB-01",
+        "name": "Trương Bảo Ngọc",
+        "hamlet": "Ấp Tân Bình",
+        "role": "Chủ nhiệm CLB Giọt hồng",
+        "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-TB-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-TB-02",
+        "name": "Dương Thị Hồng Thắm",
+        "hamlet": "Ấp Tân Bình",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-TB-02",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-XK-01",
+        "name": "Ngô Thanh Phong",
+        "hamlet": "Ấp Xuân Khánh",
+        "role": "Bí thư Chi đoàn",
+        "avatar": "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-XK-01",
+        "checkedIn": false,
+        "checkinTime": null
+    },
+    {
+        "id": "HK-XK-02",
+        "name": "Lý Tuấn Kiệt",
+        "hamlet": "Ấp Xuân Khánh",
+        "role": "Đại biểu thanh niên",
+        "avatar": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80",
+        "qrData": "HK-XK-02",
+        "checkedIn": false,
+        "checkinTime": null
+    }
+]
 };

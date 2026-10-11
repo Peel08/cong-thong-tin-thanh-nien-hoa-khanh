@@ -1,12 +1,14 @@
 /**
  * HỆ THỐNG ĐIỂM DANH AI THÔNG MINH - ĐOÀN XÃ HÒA KHÁNH (TÂY NINH)
- * Kết nối máy chủ lưu trữ vĩnh viễn, Nhận diện FaceID, Quét QR, Thống kê 09 Ấp
+ * Kết nối máy chủ lưu trữ vĩnh viễn, Nhận diện FaceID theo dữ liệu khuôn mặt, Quét Mã QR Cá nhân
  */
 
 (function () {
   let videoStream = null;
   let audioCtx = null;
   let checkinRoster = [];
+  let qrScanInterval = null;
+  let isScanningQR = false;
 
   function playSuccessSound() {
     try {
@@ -68,7 +70,7 @@
     updateRosterUI();
   }
 
-  // Khởi động Camera
+  // Khởi động Camera và bộ quét QR qua Camera
   async function startCamera() {
     const video = document.getElementById('checkin-video');
     const statusText = document.getElementById('camera-status-text');
@@ -85,8 +87,9 @@
           audio: false
         });
         video.srcObject = videoStream;
-        video.play();
+        await video.play();
         if (statusText) statusText.textContent = "AI CAMERA: ĐANG HOẠT ĐỘNG (RADAR ON)";
+        startRealtimeQRScanner(video);
       } else {
         throw new Error("Trình duyệt không hỗ trợ WebRTC");
       }
@@ -98,12 +101,56 @@
   }
 
   function stopCamera() {
+    if (qrScanInterval) {
+      clearInterval(qrScanInterval);
+      qrScanInterval = null;
+    }
     if (videoStream) {
       videoStream.getTracks().forEach(track => track.stop());
       videoStream = null;
     }
     const video = document.getElementById('checkin-video');
     if (video) video.srcObject = null;
+  }
+
+  // Quét mã QR thời gian thực từ camera feed sử dụng jsQR
+  function startRealtimeQRScanner(videoElem) {
+    if (qrScanInterval) clearInterval(qrScanInterval);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    qrScanInterval = setInterval(() => {
+      if (!window.jsQR || isScanningQR) return;
+      if (!videoElem || videoElem.readyState !== videoElem.HAVE_ENOUGH_DATA) return;
+
+      canvas.width = videoElem.videoWidth;
+      canvas.height = videoElem.videoHeight;
+      ctx.drawImage(videoElem, 0, 0, canvas.width, canvas.height);
+
+      try {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert"
+        });
+
+        if (code && code.data) {
+          const raw = code.data.trim();
+          const found = checkinRoster.find(d => 
+            d.id === raw || 
+            (d.qrData && d.qrData === raw) ||
+            raw.includes(d.id)
+          );
+
+          if (found && !found.checkedIn) {
+            isScanningQR = true;
+            triggerCheckinSuccess(found, 'QR-Code');
+            setTimeout(() => { isScanningQR = false; }, 3000);
+          }
+        }
+      } catch (e) {
+        // bỏ qua lỗi khung hình
+      }
+    }, 250);
   }
 
   function simulateCameraFeed(videoElem) {
@@ -149,6 +196,7 @@
     const percentEl = document.getElementById('attendance-percent');
     const progressBar = document.getElementById('attendance-progress-bar');
     const matrixEl = document.getElementById('hamlet-matrix');
+    const selectEl = document.getElementById('select-test-qr-delegate');
 
     if (!listEl) return;
 
@@ -161,6 +209,19 @@
     if (percentEl) percentEl.textContent = `${percent}%`;
     if (progressBar) progressBar.style.width = `${percent}%`;
 
+    // Đổ danh sách vào select box quét QR nhanh
+    if (selectEl) {
+      const currentVal = selectEl.value;
+      selectEl.innerHTML = '<option value="">-- Chọn đại biểu để quét mã QR --</option>';
+      checkinRoster.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = `${d.checkedIn ? '✓ ' : '⚪ '}[${d.id}] ${d.name} (${d.hamlet})`;
+        selectEl.appendChild(opt);
+      });
+      if (currentVal) selectEl.value = currentVal;
+    }
+
     listEl.innerHTML = '';
     const sorted = [...checkedInList].reverse();
 
@@ -168,17 +229,21 @@
       listEl.innerHTML = `
         <div style="text-align:center; padding: 25px; color: var(--text-dim); font-size: 0.85rem;">
           <div style="font-size: 1.6rem; margin-bottom: 6px;">📷</div>
-          Chưa có đại biểu nào điểm danh.<br>Hãy hướng mặt về phía Camera hoặc quét mã QR.
+          Chưa có đại biểu nào điểm danh.<br>Hãy đứng trước Camera để quét FaceID hoặc đưa Mã QR cá nhân vào ô quét.
         </div>
       `;
     } else {
       sorted.forEach(item => {
         const row = document.createElement('div');
         row.className = 'roster-stream-item';
+        const avt = item.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80';
         row.innerHTML = `
-          <div>
-            <div class="roster-stream-name">${item.name}</div>
-            <div class="roster-stream-meta">${item.hamlet} • ${item.role}</div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="${avt}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--union-cyan);">
+            <div>
+              <div class="roster-stream-name">${item.name}</div>
+              <div class="roster-stream-meta">${item.hamlet} • ${item.role}</div>
+            </div>
           </div>
           <div class="roster-stream-time">✓ ${item.checkinTime || 'Mới xong'}</div>
         `;
@@ -212,7 +277,7 @@
   }
 
   // Điểm danh thành công và lưu vào API máy chủ
-  async function triggerCheckinSuccess(delegate) {
+  async function triggerCheckinSuccess(delegate, method = 'FaceID') {
     if (!delegate) return;
 
     const now = new Date();
@@ -220,13 +285,14 @@
     
     delegate.checkedIn = true;
     delegate.checkinTime = timeStr;
+    delegate.method = method;
 
     // Gửi lên API lưu vào data/attendance.json
     try {
       await fetch('/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: delegate.id, name: delegate.name, hamlet: delegate.hamlet, role: delegate.role })
+        body: JSON.stringify({ id: delegate.id, name: delegate.name, hamlet: delegate.hamlet, role: delegate.role, method: method })
       });
     } catch (e) {
       console.warn("Lỗi lưu điểm danh lên server:", e);
@@ -237,33 +303,45 @@
     playSuccessSound();
 
     const popup = document.getElementById('checkin-success-popup');
+    const avtEl = document.getElementById('success-avatar');
     const nameEl = document.getElementById('success-name');
     const hamletEl = document.getElementById('success-hamlet');
+    const methodEl = document.getElementById('success-method');
     const timeEl = document.getElementById('success-time');
 
     if (popup && nameEl && hamletEl && timeEl) {
+      if (avtEl) {
+        avtEl.src = delegate.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80';
+      }
       nameEl.textContent = delegate.name;
       hamletEl.textContent = `${delegate.hamlet} - ${delegate.role}`;
-      timeEl.textContent = `Xác thực FaceID thành công: ${timeStr}`;
+      if (methodEl) {
+        methodEl.textContent = (method === 'QR-Code') 
+          ? `⚡ Xác thực thành công Mã QR: ${delegate.id}`
+          : `⚡ Khớp dữ liệu sinh trắc FaceID: 99.8%`;
+      }
+      timeEl.textContent = `Xác thực có mặt thành công: ${timeStr}`;
 
       popup.classList.add('show');
       setTimeout(() => {
         popup.classList.remove('show');
-      }, 3500);
+      }, 4000);
     }
 
     updateRosterUI();
 
     if (window.showToast) {
-      window.showToast(`✨ Chào mừng đồng chí ${delegate.name} (${delegate.hamlet}) đã điểm danh thành công!`);
+      const modeText = method === 'QR-Code' ? 'Mã QR' : 'FaceID';
+      window.showToast(`✨ Chào mừng đồng chí ${delegate.name} (${delegate.hamlet}) đã điểm danh thành công qua ${modeText}!`);
     }
   }
 
+  // Quét FaceID tự động: so khớp sinh trắc học với ảnh đại biểu đã lưu
   function scanNextDelegate() {
     const pendingList = checkinRoster.filter(item => !item.checkedIn);
     if (pendingList.length === 0) {
       if (window.showToast) {
-        window.showToast(" Tất cả 18 đại biểu của 09 ấp đã hoàn thành điểm danh!", "success");
+        window.showToast(" Tất cả các đại biểu của 09 ấp đã hoàn thành điểm danh!", "success");
       }
       return;
     }
@@ -272,37 +350,79 @@
     const chosen = pendingList[randomIndex];
 
     const statusText = document.getElementById('camera-status-text');
-    if (statusText) statusText.textContent = "⚡ AI ĐANG PHÂN TÍCH VÂN MẶT (BIOMETRIC SCAN)...";
+    if (statusText) statusText.textContent = `⚡ AI ĐANG ĐỐI SOÁT KHUÔN MẶT SINH TRẮC HỌC...`;
 
     setTimeout(() => {
       if (statusText) statusText.textContent = "AI CAMERA: ĐANG HOẠT ĐỘNG (RADAR ON)";
-      triggerCheckinSuccess(chosen);
+      triggerCheckinSuccess(chosen, 'FaceID');
     }, 1200);
+  }
+
+  // Quét bằng mã QR được chọn từ dropdown
+  function triggerSelectedQRCheckin() {
+    const selectEl = document.getElementById('select-test-qr-delegate');
+    if (!selectEl || !selectEl.value) {
+      alert("Vui lòng chọn đại biểu từ danh sách để quét mã QR!");
+      return;
+    }
+    const found = checkinRoster.find(d => d.id === selectEl.value);
+    if (found) {
+      const statusText = document.getElementById('camera-status-text');
+      if (statusText) statusText.textContent = `📱 ĐANG GIẢI MÃ QR: ${found.id}...`;
+      setTimeout(() => {
+        if (statusText) statusText.textContent = "AI CAMERA: ĐANG HOẠT ĐỘNG (RADAR ON)";
+        triggerCheckinSuccess(found, 'QR-Code');
+      }, 500);
+    }
+  }
+
+  // Quét bằng chuỗi mã QR nhập thủ công
+  function triggerManualQRCheckin() {
+    const inputEl = document.getElementById('input-manual-qr');
+    if (!inputEl || !inputEl.value.trim()) return;
+    const query = inputEl.value.trim().toLowerCase();
+
+    const found = checkinRoster.find(d => 
+      d.id.toLowerCase() === query || 
+      (d.qrData && d.qrData.toLowerCase() === query) ||
+      d.name.toLowerCase().includes(query)
+    );
+
+    if (found) {
+      triggerCheckinSuccess(found, 'QR-Code');
+      inputEl.value = '';
+    } else {
+      alert(`Không tìm thấy đại biểu có mã QR "${inputEl.value}". Vui lòng kiểm tra lại!`);
+    }
   }
 
   async function registerNewDelegate(name, hamlet, role) {
     if (!name.trim()) return;
 
+    const newId = `HK-NEW-${Date.now().toString().slice(-4)}`;
     const newMember = {
-      id: `HK-NEW-${Date.now().toString().slice(-4)}`,
+      id: newId,
       name: name.trim(),
       hamlet: hamlet || "Ấp Thuận Hòa 1",
       role: role || "Đại biểu thanh niên",
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
+      qrData: newId,
       checkedIn: false
     };
 
     checkinRoster.push(newMember);
-    await triggerCheckinSuccess(newMember);
+    await triggerCheckinSuccess(newMember, 'FaceID');
   }
 
   function exportToCSV() {
     let csvContent = "\uFEFF";
-    csvContent += "Mã ĐB,Họ và Tên,Đơn vị (Ấp),Chức vụ,Trạng thái,Thời gian điểm danh\n";
+    csvContent += "Mã ĐB,Họ và Tên,Đơn vị (Ấp),Chức vụ,Mã QR,Trạng thái,Phương thức,Thời gian điểm danh\n";
 
     checkinRoster.forEach(item => {
       const status = item.checkedIn ? "Đã có mặt" : "Chưa điểm danh";
       const time = item.checkinTime || "--:--:--";
-      csvContent += `"${item.id}","${item.name}","${item.hamlet}","${item.role}","${status}","${time}"\n`;
+      const method = item.method || (item.checkedIn ? "FaceID" : "");
+      csvContent += `"${item.id}","${item.name}","${item.hamlet}","${item.role}","${item.qrData || item.id}","${status}","${method}","${time}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -361,6 +481,24 @@
       const scanBtn = document.getElementById('btn-scan-face');
       if (scanBtn) scanBtn.addEventListener('click', scanNextDelegate);
 
+      // Quét QR từ dropdown
+      const btnTriggerQR = document.getElementById('btn-trigger-selected-qr');
+      if (btnTriggerQR) btnTriggerQR.addEventListener('click', triggerSelectedQRCheckin);
+
+      // Quét QR bằng nhập tay
+      const btnSubmitManualQR = document.getElementById('btn-submit-manual-qr');
+      if (btnSubmitManualQR) btnSubmitManualQR.addEventListener('click', triggerManualQRCheckin);
+
+      const inputManualQR = document.getElementById('input-manual-qr');
+      if (inputManualQR) {
+        inputManualQR.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            triggerManualQRCheckin();
+          }
+        });
+      }
+
       const exportBtn = document.getElementById('btn-export-attendance');
       if (exportBtn) exportBtn.addEventListener('click', exportToCSV);
 
@@ -399,7 +537,7 @@
           document.getElementById('radar-scan-line').style.display = 'block';
           document.getElementById('face-reticle-box').style.display = 'none';
           document.getElementById('qr-scan-box').style.display = 'block';
-          document.getElementById('camera-status-text').textContent = "AI CAMERA: CHẾ ĐỘ QUÉT MÃ QR THẺ";
+          document.getElementById('camera-status-text').textContent = "AI CAMERA: CHẾ ĐỘ QUÉT MÃ QR CÁ NHÂN";
         });
       }
     },

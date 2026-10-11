@@ -215,18 +215,23 @@ const server = http.createServer(async (req, res) => {
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-        let found = roster.find(r => r.id === body.id || (body.name && r.name.toLowerCase() === body.name.toLowerCase()));
+        const searchKey = body.id || body.qrData || body.code;
+        let found = roster.find(r => (searchKey && (r.id === searchKey || r.qrData === searchKey)) || (body.name && r.name.toLowerCase() === body.name.toLowerCase()));
         if (found) {
           found.checkedIn = true;
           found.checkinTime = timeStr;
+          found.method = body.method || 'FaceID';
         } else if (body.name) {
           found = {
             id: 'HK-ADD-' + Date.now().toString().slice(-4),
             name: body.name,
             hamlet: body.hamlet || 'Ấp Thuận Hòa 1',
             role: body.role || 'Đại biểu thanh niên',
+            avatar: body.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+            qrData: 'HK-ADD-' + Date.now().toString().slice(-4),
             checkedIn: true,
-            checkinTime: timeStr
+            checkinTime: timeStr,
+            method: body.method || 'FaceID'
           };
           roster.push(found);
         }
@@ -240,6 +245,49 @@ const server = http.createServer(async (req, res) => {
       }
       return;
     }
+  }
+
+  // Thêm hoặc cập nhật Đại biểu (kèm ảnh khuôn mặt & mã QR)
+  if (pathname === '/api/checkin/delegate' && method === 'POST') {
+    try {
+      const body = await getRequestBody(req);
+      const roster = readJson('attendance.json', []);
+      let index = roster.findIndex(r => r.id === body.id);
+      if (index !== -1) {
+        roster[index] = { ...roster[index], ...body };
+      } else {
+        const newId = body.id || ('HK-DB-' + (roster.length + 1).toString().padStart(2, '0'));
+        const newDel = {
+          id: newId,
+          name: body.name,
+          hamlet: body.hamlet || 'Ấp Thuận Hòa 1',
+          role: body.role || 'Đại biểu thanh niên',
+          avatar: body.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+          qrData: body.qrData || newId,
+          checkedIn: false,
+          checkinTime: null
+        };
+        roster.push(newDel);
+      }
+      writeJson('attendance.json', roster);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: true, roster }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // Xóa Đại biểu
+  if (pathname.startsWith('/api/checkin/delegate/') && method === 'DELETE') {
+    const delId = pathname.replace('/api/checkin/delegate/', '');
+    let roster = readJson('attendance.json', []);
+    roster = roster.filter(r => r.id !== delId);
+    writeJson('attendance.json', roster);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ success: true, roster }));
+    return;
   }
 
   // Reset điểm danh

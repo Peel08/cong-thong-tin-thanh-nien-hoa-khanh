@@ -331,32 +331,508 @@ function renderIdeasTable() {
   });
 }
 
-/* 6. QUẢN LÝ ĐIỂM DANH AI FACEID */
+/* 6. QUẢN LÝ ĐIỂM DANH AI FACEID & MÃ QR CÁ NHÂN */
+let currentBadgeDelegate = null;
+let delWebcamStream = null;
+
 function renderAttendanceTable() {
   const tbody = document.getElementById('table-attendance-tbody');
   tbody.innerHTML = '';
 
   attendanceList.forEach(a => {
     const tr = document.createElement('tr');
+    tr.id = `row-att-${a.id}`;
+    const avatarSrc = a.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80';
+    const qrText = a.qrData || a.id;
+
     tr.innerHTML = `
+      <td style="text-align: center;">
+        <div class="table-avatar-cell btn-change-face" data-id="${a.id}" title="Bấm để đổi ảnh / chụp khuôn mặt">
+          <img src="${avatarSrc}" class="table-face-avatar" alt="${a.name}">
+          <span class="table-face-cam-badge">📷</span>
+        </div>
+      </td>
       <td><code>${a.id}</code></td>
       <td><strong>${a.name}</strong></td>
       <td><span class="status-pill status-green">${a.hamlet}</span></td>
       <td>${a.role}</td>
+      <td style="text-align: center;">
+        <div class="table-qr-thumb-box btn-show-badge" data-id="${a.id}" id="qr-thumb-${a.id}" title="Bấm xem Thẻ QR đại biểu"></div>
+      </td>
       <td>
         <span class="status-pill ${a.checkedIn ? 'status-green' : 'status-gold'}">
           ${a.checkedIn ? '✓ Đã có mặt' : 'Chưa điểm danh'}
         </span>
       </td>
       <td>${a.checkinTime || '--:--:--'}</td>
+      <td style="text-align: center;">
+        <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;">
+          <button class="action-btn action-btn-primary btn-show-badge" data-id="${a.id}" title="Xem & In Thẻ Đại biểu">
+            🪪 Thẻ QR
+          </button>
+          <button class="action-btn btn-success btn-toggle-att" data-id="${a.id}" title="Điểm danh nhanh">
+            ${a.checkedIn ? 'Hủy' : '✓ Mặt'}
+          </button>
+          <button class="action-btn action-btn-info btn-edit-del" data-id="${a.id}" title="Chỉnh sửa hồ sơ">
+            ✏️
+          </button>
+          <button class="action-btn action-btn-danger btn-delete-del" data-id="${a.id}" title="Xóa đại biểu">
+            🗑️
+          </button>
+        </div>
+      </td>
     `;
     tbody.appendChild(tr);
+
+    // Sinh mã QR thu nhỏ ngay trong hàng
+    try {
+      const container = document.getElementById(`qr-thumb-${a.id}`);
+      if (container && window.QRCode) {
+        new QRCode(container, {
+          text: qrText,
+          width: 40,
+          height: 40,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    } catch (e) {
+      console.warn("Lỗi sinh QR thumbnail:", e);
+    }
+  });
+
+  // Gán sự kiện Thẻ QR
+  tbody.querySelectorAll('.btn-show-badge').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const del = attendanceList.find(d => d.id === id);
+      if (del) openBadgeModal(del);
+    });
+  });
+
+  // Gán sự kiện đổi ảnh / chụp khuôn mặt
+  tbody.querySelectorAll('.btn-change-face, .btn-edit-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const del = attendanceList.find(d => d.id === id);
+      if (del) openDelegateModal(del);
+    });
+  });
+
+  // Điểm danh nhanh thủ công
+  tbody.querySelectorAll('.btn-toggle-att').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const del = attendanceList.find(d => d.id === id);
+      if (!del) return;
+
+      if (!del.checkedIn) {
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        del.checkedIn = true;
+        del.checkinTime = timeStr;
+        await fetch('/api/checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: del.id, method: 'Thủ công' })
+        });
+        showToast(`Đã điểm danh cho đồng chí ${del.name}!`, 'success');
+      } else {
+        del.checkedIn = false;
+        del.checkinTime = null;
+        await fetch('/api/checkin/delegate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(del)
+        });
+        showToast(`Đã hủy điểm danh của đồng chí ${del.name}!`, 'info');
+      }
+      renderAttendanceTable();
+      renderOverview();
+    });
+  });
+
+  // Xóa đại biểu
+  tbody.querySelectorAll('.btn-delete-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const del = attendanceList.find(d => d.id === id);
+      if (!del) return;
+      if (confirm(`Đồng chí có chắc chắn muốn xóa đại biểu "${del.name}" (${del.id}) khỏi danh sách triệu tập?`)) {
+        await fetch(`/api/checkin/delegate/${id}`, { method: 'DELETE' });
+        attendanceList = attendanceList.filter(d => d.id !== id);
+        renderAttendanceTable();
+        renderOverview();
+        showToast(`Đã xóa đại biểu ${del.name}!`, 'success');
+      }
+    });
   });
 }
 
+function openDelegateModal(delegate = null) {
+  const modal = document.getElementById('modal-delegate-form');
+  const title = document.getElementById('delegate-modal-title');
+  const idInput = document.getElementById('del-id');
+  const codeInput = document.getElementById('del-code');
+  const nameInput = document.getElementById('del-name');
+  const hamletSelect = document.getElementById('del-hamlet');
+  const roleInput = document.getElementById('del-role');
+  const avatarPreview = document.getElementById('del-avatar-preview');
+  const avatarVal = document.getElementById('del-avatar-val');
+
+  closeDelWebcam();
+
+  if (delegate) {
+    title.textContent = `Chỉnh Sửa Đại Biểu & Khuôn Mặt: ${delegate.name}`;
+    idInput.value = delegate.id;
+    codeInput.value = delegate.id;
+    codeInput.readOnly = true;
+    nameInput.value = delegate.name;
+    hamletSelect.value = delegate.hamlet;
+    roleInput.value = delegate.role;
+    avatarVal.value = delegate.avatar || '';
+    avatarPreview.src = delegate.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80';
+  } else {
+    title.textContent = "Đăng Ký Đại Biểu Mới & Cấp Mã QR";
+    const nextNum = (attendanceList.length + 1).toString().padStart(2, '0');
+    idInput.value = '';
+    codeInput.value = `HK-DB-${nextNum}`;
+    codeInput.readOnly = false;
+    nameInput.value = '';
+    hamletSelect.value = 'Ấp Thuận Hòa 1';
+    roleInput.value = 'Đại biểu thanh niên';
+    const defaultAvt = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80';
+    avatarVal.value = defaultAvt;
+    avatarPreview.src = defaultAvt;
+  }
+
+  modal.classList.add('open');
+}
+
+window.closeDelegateModal = function() {
+  const modal = document.getElementById('modal-delegate-form');
+  if (modal) modal.classList.remove('open');
+  closeDelWebcam();
+};
+
+async function startDelWebcam() {
+  const container = document.getElementById('del-webcam-container');
+  const video = document.getElementById('del-webcam-video');
+  if (!container || !video) return;
+
+  try {
+    delWebcamStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    video.srcObject = delWebcamStream;
+    container.style.display = 'block';
+  } catch (err) {
+    alert("Không thể mở Webcam để chụp khuôn mặt: " + err.message);
+  }
+}
+
+function closeDelWebcam() {
+  if (delWebcamStream) {
+    delWebcamStream.getTracks().forEach(track => track.stop());
+    delWebcamStream = null;
+  }
+  const video = document.getElementById('del-webcam-video');
+  if (video) video.srcObject = null;
+  const container = document.getElementById('del-webcam-container');
+  if (container) container.style.display = 'none';
+}
+
+function captureDelPhoto() {
+  const video = document.getElementById('del-webcam-video');
+  if (!video || !video.videoWidth) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 400;
+  const ctx = canvas.getContext('2d');
+
+  // Crop tâm thành hình vuông chuẩn khuôn mặt
+  const size = Math.min(video.videoWidth, video.videoHeight);
+  const sx = (video.videoWidth - size) / 2;
+  const sy = (video.videoHeight - size) / 2;
+  ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
+
+  const base64 = canvas.toDataURL('image/jpeg', 0.9);
+  document.getElementById('del-avatar-preview').src = base64;
+  document.getElementById('del-avatar-val').value = base64;
+
+  closeDelWebcam();
+  showToast('Đã chụp ảnh khuôn mặt thành công!', 'success');
+}
+
+function openBadgeModal(delegate) {
+  currentBadgeDelegate = delegate;
+  const modal = document.getElementById('modal-delegate-qr-card');
+  if (!modal) return;
+
+  const avatarSrc = delegate.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80';
+  document.getElementById('badge-photo').src = avatarSrc;
+  document.getElementById('badge-name').textContent = delegate.name.toUpperCase();
+  document.getElementById('badge-role-hamlet').textContent = `${delegate.role} • ${delegate.hamlet}`;
+  document.getElementById('badge-code-label').textContent = delegate.id;
+
+  // Render QR Code kích thước lớn
+  const qrBox = document.getElementById('badge-qrcode-display');
+  qrBox.innerHTML = '';
+  if (window.QRCode) {
+    new QRCode(qrBox, {
+      text: delegate.qrData || delegate.id,
+      width: 140,
+      height: 140,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  modal.classList.add('open');
+}
+
+// Tải thẻ đại biểu ra file ảnh PNG chất lượng cao
+function downloadBadgePNG() {
+  if (!currentBadgeDelegate) return;
+  const del = currentBadgeDelegate;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 920;
+  const ctx = canvas.getContext('2d');
+
+  // Nền thẻ gradient sang trọng
+  const grad = ctx.createLinearGradient(0, 0, 600, 920);
+  grad.addColorStop(0, '#071933');
+  grad.addColorStop(1, '#0c254a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 600, 920);
+
+  // Viền ngoài
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(10, 10, 580, 900);
+
+  // Header đỏ cờ
+  const headerGrad = ctx.createLinearGradient(0, 0, 600, 160);
+  headerGrad.addColorStop(0, '#da251d');
+  headerGrad.addColorStop(1, '#b91c1c');
+  ctx.fillStyle = headerGrad;
+  ctx.fillRect(10, 10, 580, 150);
+
+  // Logo Đoàn
+  const logo = new Image();
+  logo.crossOrigin = 'anonymous';
+  logo.src = 'assets/images/logo.png';
+
+  logo.onload = () => {
+    ctx.drawImage(logo, 30, 25, 90, 100);
+
+    // Tiêu đề header
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px Inter, Arial, sans-serif';
+    ctx.fillText('ĐOÀN TNCS HỒ CHÍ MINH XÃ HÒA KHÁNH', 135, 65);
+
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 15px Inter, Arial, sans-serif';
+    ctx.fillText('ĐẠI BIỂU HỘI NGHỊ / ĐẠI HỘI ĐOÀN', 135, 100);
+
+    // Ảnh đại biểu
+    const avatar = new Image();
+    avatar.crossOrigin = 'anonymous';
+    avatar.src = del.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80';
+
+    avatar.onload = () => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(300, 280, 80, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(avatar, 220, 200, 160, 160);
+      ctx.restore();
+
+      // Viền ảnh
+      ctx.strokeStyle = '#00f2fe';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(300, 280, 82, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Họ tên
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 30px Inter, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(del.name.toUpperCase(), 300, 410);
+
+      // Chức vụ & Ấp
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '600 20px Inter, Arial, sans-serif';
+      ctx.fillText(`${del.role} • ${del.hamlet}`, 300, 445);
+
+      // Khung nền QR
+      ctx.fillStyle = '#ffffff';
+      ctx.roundRect ? ctx.roundRect(175, 480, 250, 250, 16) : ctx.fillRect(175, 480, 250, 250);
+      ctx.fill();
+
+      // Lấy ảnh QR từ modal
+      const qrCanvas = document.querySelector('#badge-qrcode-display canvas') || document.querySelector('#badge-qrcode-display img');
+      if (qrCanvas) {
+        ctx.drawImage(qrCanvas, 195, 500, 210, 210);
+      }
+
+      // Mã số định danh
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = 'bold 22px monospace';
+      ctx.fillText(`MÃ ĐB: ${del.id}`, 300, 775);
+
+      // Ghi chú an toàn
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 15px Inter, Arial, sans-serif';
+      ctx.fillText('✓ THẺ ĐẠI BIỂU ĐIỆN TỬ • QUÉT TẠI CỔNG ĐÓN TIẾP', 300, 820);
+
+      // Chân thẻ
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '14px Inter, Arial, sans-serif';
+      ctx.fillText('XÃ HÒA KHÁNH - TỈNH TÂY NINH', 300, 875);
+
+      // Tải về
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `The_Dai_Bieu_${del.id}_${del.name.replace(/\s+/g, '_')}.png`;
+      a.click();
+      showToast(`Đã tải Thẻ đại biểu của ${del.name} thành công!`, 'success');
+    };
+    avatar.onerror = () => {
+      showToast('Lỗi tải ảnh đại biểu để xuất thẻ!', 'warning');
+    };
+  };
+}
+
 function initAttendanceActions() {
+  // Nút mở modal thêm đại biểu mới
+  const btnAdd = document.getElementById('btn-add-delegate-modal');
+  if (btnAdd) {
+    btnAdd.addEventListener('click', () => openDelegateModal(null));
+  }
+
+  // Chụp webcam trong modal đại biểu
+  const btnToggleCam = document.getElementById('btn-toggle-del-webcam');
+  if (btnToggleCam) btnToggleCam.addEventListener('click', startDelWebcam);
+
+  const btnCaptureCam = document.getElementById('btn-capture-del-photo');
+  if (btnCaptureCam) btnCaptureCam.addEventListener('click', captureDelPhoto);
+
+  const btnCloseCam = document.getElementById('btn-close-del-webcam');
+  if (btnCloseCam) btnCloseCam.addEventListener('click', closeDelWebcam);
+
+  // File upload ảnh khuôn mặt trong modal đại biểu
+  const fileInput = document.getElementById('del-file-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const base64 = await toBase64(file);
+      document.getElementById('del-avatar-preview').src = base64;
+
+      try {
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name, base64 })
+        }).then(r => r.json());
+
+        if (uploadRes.success) {
+          document.getElementById('del-avatar-val').value = uploadRes.url;
+          showToast('Đã tải ảnh khuôn mặt lên máy chủ!', 'success');
+        } else {
+          document.getElementById('del-avatar-val').value = base64;
+        }
+      } catch (err) {
+        document.getElementById('del-avatar-val').value = base64;
+      }
+    });
+  }
+
+  // Submit form đại biểu
+  const formDel = document.getElementById('form-delegate-manage');
+  if (formDel) {
+    formDel.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = document.getElementById('del-code').value.trim();
+      const name = document.getElementById('del-name').value.trim();
+      const hamlet = document.getElementById('del-hamlet').value;
+      const role = document.getElementById('del-role').value.trim();
+      const avatar = document.getElementById('del-avatar-val').value || document.getElementById('del-avatar-preview').src;
+
+      if (!name) return;
+
+      const delegateData = {
+        id: code,
+        name: name,
+        hamlet: hamlet,
+        role: role,
+        avatar: avatar,
+        qrData: code
+      };
+
+      try {
+        const res = await fetch('/api/checkin/delegate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(delegateData)
+        }).then(r => r.json());
+
+        if (res.success) {
+          showToast(`Đã lưu đại biểu ${name} và cấp mã QR thành công!`, 'success');
+          closeDelegateModal();
+          await loadAllData();
+        } else {
+          showToast('Lỗi lưu đại biểu!', 'warning');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Lỗi kết nối máy chủ!', 'warning');
+      }
+    });
+  }
+
+  // Tải thẻ đại biểu PNG
+  const btnDl = document.getElementById('btn-download-badge-png');
+  if (btnDl) btnDl.addEventListener('click', downloadBadgePNG);
+
+  // In thẻ
+  const btnPrint = document.getElementById('btn-print-badge');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // Quét thử mã QR này
+  const btnQuick = document.getElementById('btn-quick-test-checkin');
+  if (btnQuick) {
+    btnQuick.addEventListener('click', async () => {
+      if (!currentBadgeDelegate) return;
+      const del = currentBadgeDelegate;
+      await fetch('/api/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: del.id, method: 'QR-Code' })
+      });
+      showToast(`⚡ Đã xác thực thành công mã QR của ${del.name}!`, 'success');
+      document.getElementById('modal-delegate-qr-card').classList.remove('open');
+      await loadAllData();
+    });
+  }
+
+  // Nút reset điểm danh
   document.getElementById('btn-reset-att-admin').addEventListener('click', async () => {
-    if (confirm('Đồng chí có chắc chắn muốn đặt lại toàn bộ trạng thái điểm danh?')) {
+    if (confirm('Đồng chí có chắc chắn muốn đặt lại toàn bộ trạng thái điểm danh về ban đầu?')) {
       await fetch('/api/checkin/reset', { method: 'POST' });
       attendanceList.forEach(a => { a.checkedIn = false; a.checkinTime = null; });
       renderAttendanceTable();
@@ -365,11 +841,12 @@ function initAttendanceActions() {
     }
   });
 
+  // Nút xuất CSV
   document.getElementById('btn-export-att-admin').addEventListener('click', () => {
-    let csvContent = "\uFEFFMã ĐB,Họ và Tên,Đơn vị (Ấp),Chức vụ,Trạng thái,Thời gian điểm danh\n";
+    let csvContent = "\uFEFFMã ĐB,Họ và Tên,Đơn vị (Ấp),Chức vụ,Mã QR,Trạng thái,Thời gian điểm danh\n";
     attendanceList.forEach(a => {
       const status = a.checkedIn ? "Đã có mặt" : "Chưa điểm danh";
-      csvContent += `"${a.id}","${a.name}","${a.hamlet}","${a.role}","${status}","${a.checkinTime || ''}"\n`;
+      csvContent += `"${a.id}","${a.name}","${a.hamlet}","${a.role}","${a.qrData || a.id}","${status}","${a.checkinTime || ''}"\n`;
     });
     downloadCsv(csvContent, `Bao_Cao_Diem_Danh_Dai_Bieu_Hoa_Khanh_${new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')}.csv`);
   });

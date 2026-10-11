@@ -406,3 +406,216 @@ body.admin-body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   THẺ ĐẠI BIỂU & DỮ LIỆU KHUÔN MẶT / MÃ QR CÁ NHÂN
+   ========================================================================== */
+.btn-success {
+  background: #10b981;
+  color: #fff;
+  font-weight: 700;
+}
+.btn-success:hover {
+  background: #059669;
+}
+
+.table-avatar-cell {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+.table-face-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--admin-cyan);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease;
+}
+.table-avatar-cell:hover .table-face-avatar {
+  transform: scale(1.08);
+}
+.table-face-cam-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--admin-blue);
+  color: #fff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fff;
+}
+
+.table-qr-thumb-box {
+  width: 46px;
+  height: 46px;
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.table-qr-thumb-box:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+.table-qr-thumb-box img,
+.table-qr-thumb-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Thẻ Đại Biểu Hội Nghị / Đại Hội (E-Badge) */
+.delegate-badge-card {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  background: linear-gradient(145deg, #071933 0%, #0d2950 100%);
+  border-radius: 20px;
+  border: 2px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+}
+
+.badge-card-header {
+  background: linear-gradient(135deg, #da251d 0%, #b91c1c 100%);
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid #ffcc00;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.badge-card-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.badge-card-header-text h4 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.badge-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffcc00;
+  text-align: left;
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+}
+
+.badge-card-body {
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.badge-photo-frame {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3.5px solid var(--admin-cyan);
+  padding: 3px;
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  margin-bottom: 12px;
+}
+
+.badge-photo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.badge-name-text {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.badge-meta-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--admin-cyan);
+  margin-bottom: 16px;
+}
+
+.badge-qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(3, 13, 29, 0.7);
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  margin-bottom: 14px;
+}
+
+.badge-qr-box {
+  background: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+
+.badge-qr-box img,
+.badge-qr-box canvas {
+  width: 140px !important;
+  height: 140px !important;
+  display: block;
+}
+
+.badge-code-label {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-top: 8px;
+  letter-spacing: 0.08em;
+}
+
+.badge-security-note {
+  font-size: 0.72rem;
+  color: #10b981;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge-card-footer {
+  background: rgba(2, 8, 18, 0.85);
+  padding: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  letter-spacing: 0.06em;
+}
