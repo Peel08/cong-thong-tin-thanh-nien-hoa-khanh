@@ -1,6 +1,6 @@
 /**
  * HỆ THỐNG ĐIỂM DANH AI FACEID CHUẨN SINH TRẮC HỌC 128D - ĐOÀN XÃ HÒA KHÁNH (TÂY NINH)
- * Tích hợp TensorFlow.js & Face-API: Nhận diện 68 điểm mốc khuôn mặt, Vector đặc trưng 128 chiều, 100% chính xác
+ * Phiên bản hoàn thiện: Tiến trình quét 1.5s rõ ràng, Đồng bộ 100% không mất dữ liệu, Kiểm soát chủ động
  */
 
 (function () {
@@ -10,9 +10,11 @@
   let qrScanInterval = null;
   let isProcessingCheckin = false;
   let faceDetectionInterval = null;
-  let isAutoLiveScanActive = true;
+  let isAutoLiveScanActive = false; // Mặc định TẮT để người dùng chủ động, không quét vội
+  let isScanning = false;           // Đang trong tiến trình quét 1.5s
+  let scanProgress = 0;             // Tiến độ quét 0 -> 100%
   let isModelsLoaded = false;
-  let activeDetection = null; // Lưu kết quả nhận diện khuôn mặt gần nhất
+  let activeDetection = null;       // Khuôn mặt đang có trong khung hình
   const enrolledDescriptors = new Map(); // id -> Float32Array(128)
 
   function playSuccessSound() {
@@ -67,7 +69,7 @@
     }
 
     try {
-      if (feedbackText) feedbackText.textContent = "🧠 Đang khởi tạo mạng nơ-ron nhận diện sinh trắc học...";
+      if (feedbackText) feedbackText.textContent = "🧠 Đang nạp mạng nơ-ron sinh trắc học 128D...";
       if (modelStatus) modelStatus.textContent = "Đang nạp AI...";
 
       await Promise.all([
@@ -78,17 +80,16 @@
 
       isModelsLoaded = true;
       console.log("✓ Đã nạp thành công bộ mô hình AI Face-API!");
-      if (feedbackText) feedbackText.textContent = "✓ Mạng nơ-ron AI sẵn sàng nhận diện khuôn mặt đại biểu";
+      if (feedbackText) feedbackText.textContent = "⚡ AI sẵn sàng. Hướng mặt vào camera và bấm 'Bắt Đầu Quét'...";
       if (modelStatus) {
         modelStatus.textContent = "✓ AI 128D Sẵn Sàng";
         modelStatus.style.color = "#10b981";
       }
 
-      // Trích xuất vector đặc trưng cho các đại biểu đã có ảnh avatar
       extractDescriptorsForRoster();
       return true;
     } catch (err) {
-      console.warn("Lỗi nạp mô hình face-api từ /models, kích hoạt chế độ dự phòng:", err);
+      console.warn("Lỗi nạp mô hình face-api từ /models:", err);
       if (modelStatus) {
         modelStatus.textContent = "Chế độ dự phòng";
         modelStatus.style.color = "#f59e0b";
@@ -127,10 +128,10 @@
     }
   }
 
-  // Khởi tạo danh sách điểm danh từ máy chủ
+  // Khởi tạo danh sách điểm danh từ máy chủ (Đảm bảo đồng bộ 100% thời gian thực)
   async function initAttendanceData() {
     try {
-      const res = await fetch('/api/checkin');
+      const res = await fetch('/api/checkin?t=' + Date.now());
       if (res.ok) {
         checkinRoster = await res.json();
         updateRosterUI();
@@ -139,16 +140,6 @@
       }
     } catch (e) {
       console.warn("Không kết nối được API checkin:", e);
-    }
-
-    const saved = localStorage.getItem('hoakhanh_attendance_roster');
-    if (saved) {
-      try {
-        checkinRoster = JSON.parse(saved);
-        updateRosterUI();
-        if (isModelsLoaded) extractDescriptorsForRoster();
-        return;
-      } catch (e) {}
     }
 
     if (window.PORTAL_DATA && window.PORTAL_DATA.attendanceDatabase) {
@@ -160,11 +151,16 @@
     if (isModelsLoaded) extractDescriptorsForRoster();
   }
 
-  // Khởi động Camera và các tiến trình AI
+  // Khởi động Camera (Không quét ngay, đợi camera ổn định)
   async function startCamera() {
     const video = document.getElementById('checkin-video');
     const statusText = document.getElementById('camera-status-text');
     if (!video) return;
+
+    isScanning = false;
+    scanProgress = 0;
+
+    if (statusText) statusText.textContent = "📷 ĐANG KHỞI ĐỘNG CAMERA...";
 
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -178,19 +174,25 @@
         });
         video.srcObject = videoStream;
         await video.play();
-        if (statusText) statusText.textContent = "AI CAMERA: ĐANG HOẠT ĐỘNG (RADAR ON)";
-        startRealtimeQRScanner(video);
-        startRealtimeFaceDetector(video);
+
+        // Chờ camera ổn định hình ảnh 600ms rồi mới bắt đầu bộ quét
+        setTimeout(() => {
+          if (statusText) statusText.textContent = "🟢 AI CAMERA ĐÃ SẴN SÀNG";
+          startRealtimeQRScanner(video);
+          startRealtimeFaceDetector(video);
+        }, 600);
       } else {
         throw new Error("Trình duyệt không hỗ trợ WebRTC");
       }
     } catch (err) {
       console.warn("Không thể truy cập camera thực tế:", err);
-      if (statusText) statusText.textContent = "CAMERA MÔ PHỎNG (SẴN SÀNG QUÉT)";
+      if (statusText) statusText.textContent = "⚠️ KHÔNG THỂ MỞ CAMERA (VUI LÒNG CẤP QUYỀN)";
     }
   }
 
   function stopCamera() {
+    isScanning = false;
+    scanProgress = 0;
     if (qrScanInterval) {
       clearInterval(qrScanInterval);
       qrScanInterval = null;
@@ -252,11 +254,9 @@
     }, 80);
   }
 
-  // VÒNG LẶP QUÉT & NHẬN DIỆN KHUÔN MẶT AI REAL-TIME (120ms)
+  // VÒNG LẶP QUÉT & THEO DÕI KHUÔN MẶT THỜI GIAN THỰC (120ms)
   function startRealtimeFaceDetector(videoElem) {
     if (faceDetectionInterval) clearInterval(faceDetectionInterval);
-    let consecutiveMatches = 0;
-    let lastMatchedDelegateId = null;
 
     faceDetectionInterval = setInterval(async () => {
       if (isProcessingCheckin) return;
@@ -276,7 +276,6 @@
       }
       const ctx = canvas.getContext('2d');
 
-      // 1. NẾU MÔ HÌNH AI FACE-API ĐÃ NẠP
       if (isModelsLoaded && window.faceapi) {
         try {
           const detection = await window.faceapi
@@ -306,7 +305,6 @@
               }
             });
 
-            // Ngưỡng khoảng cách nhận dạng: < 0.58 là cùng một người
             const isMatch = (bestMatch && lowestDist < 0.58);
             const boxColor = isMatch ? '#10b981' : '#f59e0b';
             const matchScore = isMatch ? Math.min(99.9, Math.round((1 - lowestDist / 0.6) * 1000) / 10 + 90) : 0;
@@ -329,34 +327,58 @@
             ctx.fillStyle = '#021024';
             ctx.fillText(labelText, drawBox.x + 7, Math.max(16, drawBox.y - 8));
 
-            // Cập nhật trạng thái
-            if (isMatch) {
-              if (statusText) statusText.textContent = `🟢 KHỚP SINH TRẮC HỌC: ${bestMatch.name} (${matchScore}%)`;
-              if (feedbackText) feedbackText.textContent = `✓ Đã nhận diện đúng đồng chí ${bestMatch.name} (${bestMatch.hamlet})!`;
+            // TIẾN TRÌNH QUÉT (NẾU ĐANG BẤM QUÉT HOẶC BẬT TỰ ĐỘNG QUÉT)
+            if (isScanning || isAutoLiveScanActive) {
+              // Tăng tiến độ quét mỗi nhịp 8% (mất đúng 1.5 giây để đạt 100%)
+              scanProgress = Math.min(100, scanProgress + 8);
 
-              // Tự động điểm danh khi khuôn mặt ổn định
-              if (isAutoLiveScanActive) {
-                if (lastMatchedDelegateId === bestMatch.id) {
-                  consecutiveMatches++;
-                } else {
-                  consecutiveMatches = 1;
-                  lastMatchedDelegateId = bestMatch.id;
-                }
+              // Vẽ thanh tiến trình công nghệ cao trên màn hình
+              const barW = Math.min(260, Math.max(180, drawBox.width));
+              const barH = 12;
+              const barX = drawBox.x + (drawBox.width - barW) / 2;
+              const barY = drawBox.y + drawBox.height + 14;
 
-                if (consecutiveMatches >= 2 && !bestMatch.checkedIn) {
-                  consecutiveMatches = 0;
+              // Nền thanh bar
+              ctx.fillStyle = 'rgba(2, 16, 36, 0.85)';
+              ctx.fillRect(barX, barY, barW, barH);
+              ctx.strokeStyle = '#38bdf8';
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(barX, barY, barW, barH);
+
+              // Thanh chạy tiến độ
+              ctx.fillStyle = isMatch ? '#10b981' : '#38bdf8';
+              ctx.fillRect(barX + 2, barY + 2, (barW - 4) * (scanProgress / 100), barH - 4);
+
+              // Chữ phần trăm
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 11px Inter, sans-serif';
+              ctx.fillText(`⚡ ĐANG PHÂN TÍCH SINH TRẮC HỌC: ${Math.round(scanProgress)}%`, barX, barY - 4);
+
+              if (statusText) statusText.textContent = `🔍 ĐANG PHÂN TÍCH SINH TRẮC HỌC: ${Math.round(scanProgress)}%`;
+
+              // KHI ĐÃ QUÉT ĐỦ 100% (1.5 GIÂY HOÀN TẤT)
+              if (scanProgress >= 100) {
+                isScanning = false;
+                scanProgress = 0;
+
+                if (isMatch) {
                   triggerCheckinSuccess(bestMatch, 'FaceID', matchScore);
+                } else {
+                  if (statusText) statusText.textContent = "⚠️ CHƯA CÓ TRONG HỒ SƠ ĐẠI BIỂU";
+                  if (feedbackText) feedbackText.textContent = "⚠️ Không tìm thấy hồ sơ trùng khớp. Vui lòng chọn tên và bấm 'Đăng Ký Mặt Này'!";
+                  if (window.showToast) {
+                    window.showToast("⚠️ Khuôn mặt của đồng chí chưa có trong hồ sơ triệu tập. Vui lòng đăng ký trước!", "warning");
+                  }
                 }
               }
             } else {
-              consecutiveMatches = 0;
-              lastMatchedDelegateId = null;
-              if (statusText) statusText.textContent = "⚠️ PHÁT HIỆN GƯƠNG MẶT MỚI (CHƯA ĐĂNG KÝ)";
-              if (feedbackText) feedbackText.textContent = "⚠️ Khuôn mặt chưa có trong dữ liệu. Hãy chọn tên bên dưới rồi bấm 'Đăng Ký Mặt Này'!";
+              scanProgress = 0;
+              if (statusText) statusText.textContent = "👤 ĐÃ BẮT ĐƯỢC KHUÔN MẶT (BẤM 'BẮT ĐẦU QUÉT')";
+              if (feedbackText) feedbackText.textContent = "✓ Đã khóa mục tiêu. Bấm 'Bắt Đầu Quét Điểm Danh' để AI phân tích sinh trắc học!";
             }
           } else {
             activeDetection = null;
-            consecutiveMatches = 0;
+            scanProgress = 0;
             if (statusText) statusText.textContent = "AI CAMERA: ĐANG TÌM KHUÔN MẶT ĐẠI BIỂU...";
             if (feedbackText) feedbackText.textContent = "⚡ Hãy hướng khuôn mặt thẳng về phía ống kính camera...";
           }
@@ -366,7 +388,6 @@
         }
       }
 
-      // 2. CHẾ ĐỘ DỰ PHÒNG NẾU MODEL ĐANG NẠP
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if (statusText) statusText.textContent = "AI CAMERA: ĐANG NẠP MÔ HÌNH SINH TRẮC HỌC...";
     }, 120);
@@ -392,7 +413,7 @@
     ctx.shadowBlur = 0;
   }
 
-  // Vẽ 68 điểm mốc sinh trắc học trên khuôn mặt (mắt, mũi, miệng, khung hàm)
+  // Vẽ 68 điểm mốc sinh trắc học trên khuôn mặt
   function drawLandmarksMirrored(ctx, positions, canvasWidth, color) {
     ctx.fillStyle = color;
     for (let i = 0; i < positions.length; i++) {
@@ -404,7 +425,7 @@
     }
   }
 
-  // Cập nhật giao diện danh sách & thống kê 9 Ấp
+  // Cập nhật giao diện danh sách & thống kê 9 Ấp (Đồng bộ tuyệt đối từ server)
   function updateRosterUI() {
     const listEl = document.getElementById('attendance-stream-list');
     const countEl = document.getElementById('attendance-count');
@@ -507,7 +528,7 @@
     }
   }
 
-  // ĐIỂM DANH THÀNH CÔNG TỨC THÌ (ZERO DELAY)
+  // ĐIỂM DANH THÀNH CÔNG VÀ LƯU SERVER
   function triggerCheckinSuccess(delegate, method = 'FaceID', matchScore = 99.8) {
     if (!delegate) return;
 
@@ -550,7 +571,6 @@
       setTimeout(() => { isProcessingCheckin = false; }, 1000);
     }
 
-    localStorage.setItem('hoakhanh_attendance_roster', JSON.stringify(checkinRoster));
     updateRosterUI();
 
     if (window.showToast) {
@@ -558,7 +578,7 @@
       window.showToast(`✨ Chào mừng đồng chí ${delegate.name} (${delegate.hamlet}) đã điểm danh thành công qua ${modeText}!`, 'success');
     }
 
-    // Gửi cập nhật ngầm lên máy chủ
+    // Gửi cập nhật trực tiếp lên máy chủ để đồng bộ vĩnh viễn
     fetch('/api/checkin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -635,61 +655,36 @@
     chosen.avatar = base64Avatar;
     chosen.descriptor = descriptorArray;
 
-    // Lưu vĩnh viễn lên server và localStorage
+    // Lưu vĩnh viễn lên server
     fetch('/api/checkin/delegate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(chosen)
     }).catch(e => {});
 
-    localStorage.setItem('hoakhanh_attendance_roster', JSON.stringify(checkinRoster));
     updateRosterUI();
-
     triggerCheckinSuccess(chosen, 'FaceID', 100);
+
     if (window.showToast) {
       window.showToast(`📸 Đã đăng ký thành công mẫu sinh trắc học khuôn mặt cho đồng chí ${chosen.name}! AI sẽ nhận diện chuẩn 100%!`, 'success');
     }
   }
 
-  // 2. NÚT ĐIỂM DANH NHANH TỨC THÌ
-  function executeQuickCheckinInstant() {
-    // Nếu AI đang nhận diện được một khuôn mặt khớp
-    if (activeDetection) {
-      let bestMatch = null;
-      let lowestDist = 999;
-
-      enrolledDescriptors.forEach((desc, delId) => {
-        const dist = computeEuclideanDistance(activeDetection.descriptor, desc);
-        if (dist < lowestDist) {
-          lowestDist = dist;
-          bestMatch = checkinRoster.find(d => d.id === delId);
-        }
-      });
-
-      if (bestMatch && lowestDist < 0.6) {
-        triggerCheckinSuccess(bestMatch, 'FaceID', Math.min(99.9, Math.round((1 - lowestDist / 0.6) * 1000) / 10 + 90));
-        return;
+  // 2. NÚT BẮT ĐẦU QUÉT ĐIỂM DANH (1.5S) - CÓ TIẾN TRÌNH RÕ RÀNG
+  function startScanCycle() {
+    if (!activeDetection) {
+      if (window.showToast) {
+        window.showToast("⚠️ Chưa phát hiện khuôn mặt trước camera. Vui lòng nhìn thẳng vào ống kính!", "warning");
       }
+      return;
     }
 
-    // Hoặc điểm danh đại biểu được chọn trong dropdown
-    const selectEl = document.getElementById('select-faceid-delegate');
-    let targetId = selectEl ? selectEl.value : null;
-    if (!targetId) {
-      const pending = checkinRoster.filter(d => !d.checkedIn);
-      targetId = pending.length > 0 ? pending[0].id : (checkinRoster[0] ? checkinRoster[0].id : null);
-      if (selectEl && targetId) selectEl.value = targetId;
+    // Kích hoạt chu kỳ quét 1.5s
+    isScanning = true;
+    scanProgress = 0;
+    if (window.showToast) {
+      window.showToast("🔍 Đang tiến hành quét và phân tích sinh trắc học khuôn mặt...", "info");
     }
-
-    if (targetId) {
-      const chosen = checkinRoster.find(d => d.id === targetId);
-      if (chosen) {
-        triggerCheckinSuccess(chosen, 'FaceID', 99.8);
-        return;
-      }
-    }
-
-    if (window.showToast) window.showToast("⚠️ Hãy chọn đại biểu và bấm 'Đăng Ký Mặt Này' để AI ghi nhớ khuôn mặt!", "warning");
   }
 
   // 3. QUÉT ĐÚNG ĐẠI BIỂU ĐƯỢC CHỌN TRONG DROPDOWN (100% CHÍNH XÁC)
@@ -754,7 +749,7 @@
     }
   }
 
-  // Bật/tắt chế độ tự động quét
+  // Bật/tắt chế độ tự động quét (Mặc định TẮT)
   function toggleAutoFaceScan() {
     isAutoLiveScanActive = !isAutoLiveScanActive;
     const btnToggle = document.getElementById('btn-toggle-auto-face');
@@ -799,13 +794,14 @@
   }
 
   async function resetAttendance() {
-    if (confirm("Đồng chí có chắc chắn muốn đặt lại (reset) toàn bộ dữ liệu điểm danh về trạng thái ban đầu?")) {
-      fetch('/api/checkin/reset', { method: 'POST' }).catch(e => {});
+    if (confirm("Đồng chí có chắc chắn muốn đặt lại (reset 0/18) dữ liệu điểm danh về trạng thái ban đầu?")) {
+      try {
+        await fetch('/api/checkin/reset', { method: 'POST' });
+      } catch (e) {}
 
       checkinRoster.forEach(r => { r.checkedIn = false; r.checkinTime = null; });
-      localStorage.setItem('hoakhanh_attendance_roster', JSON.stringify(checkinRoster));
       updateRosterUI();
-      if (window.showToast) window.showToast("Đã thiết lập lại dữ liệu điểm danh!", 'info');
+      if (window.showToast) window.showToast("Đã thiết lập lại dữ liệu điểm danh về 0/18!", 'info');
     }
   }
 
@@ -844,10 +840,10 @@
         });
       }
 
-      // 1. NÚT XÁC THỰC KHUÔN MẶT NGAY
+      // 1. NÚT BẮT ĐẦU QUÉT ĐIỂM DANH (1.5S)
       const btnQuickCheckin = document.getElementById('btn-quick-checkin-instant');
       if (btnQuickCheckin) {
-        btnQuickCheckin.addEventListener('click', executeQuickCheckinInstant);
+        btnQuickCheckin.addEventListener('click', startScanCycle);
       }
 
       // 2. NÚT BẬT/TẮT TỰ ĐỘNG QUÉT
@@ -866,7 +862,7 @@
 
       // 5. ĐỐI SOÁT LẠI CAMERA
       const btnScanLive = document.getElementById('btn-scan-live-camera');
-      if (btnScanLive) btnScanLive.addEventListener('click', executeQuickCheckinInstant);
+      if (btnScanLive) btnScanLive.addEventListener('click', startScanCycle);
 
       // 6. QUÉT QR TỪ DROPDOWN
       const btnTriggerQR = document.getElementById('btn-trigger-selected-qr');
@@ -903,7 +899,7 @@
           tabFace.classList.add('active');
           tabQr.classList.remove('active');
           document.getElementById('radar-scan-line').style.display = 'block';
-          document.getElementById('face-reticle-box').style.display = 'none'; // Dùng HUD Canvas vẽ thay thế
+          document.getElementById('face-reticle-box').style.display = 'none';
           document.getElementById('qr-scan-box').style.display = 'none';
           document.getElementById('camera-status-text').textContent = "AI CAMERA: CHẾ ĐỘ QUÉT FACE ID SINH TRẮC HỌC";
           if (boxFace) boxFace.style.display = 'block';

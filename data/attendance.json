@@ -4,11 +4,10 @@
     "name": "Nguyễn Văn An",
     "hamlet": "Ấp Thuận Hòa 1",
     "role": "Bí thư Chi đoàn",
-    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+    "avatar": "assets/uploads/img_1791717982941_bxd96e.jpg",
     "qrData": "HK-TH1-01",
-    "checkedIn": true,
-    "checkinTime": "15:40:57",
-    "method": "FaceID"
+    "checkedIn": false,
+    "checkinTime": null
   },
   {
     "id": "HK-TH1-02",
@@ -17,9 +16,8 @@
     "role": "Đại biểu thanh niên",
     "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
     "qrData": "HK-TH1-02",
-    "checkedIn": true,
-    "checkinTime": "15:48:22",
-    "method": "FaceID"
+    "checkedIn": false,
+    "checkinTime": null
   },
   {
     "id": "HK-TH2-01",
@@ -28,9 +26,8 @@
     "role": "Phó Bí thư Chi đoàn",
     "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
     "qrData": "HK-TH2-01",
-    "checkedIn": true,
-    "checkinTime": "15:54:55",
-    "method": "FaceID"
+    "checkedIn": false,
+    "checkinTime": null
   },
   {
     "id": "HK-TH2-02",
@@ -39,9 +36,8 @@
     "role": "Đại biểu thanh niên",
     "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     "qrData": "HK-TH2-02",
-    "checkedIn": true,
-    "checkinTime": "16:03:02",
-    "method": "FaceID"
+    "checkedIn": false,
+    "checkinTime": null
   },
   {
     "id": "HK-BL-01",
