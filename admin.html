@@ -89,6 +89,17 @@
           <span class="nav-icon">📷</span> Điểm danh AI FaceID
         </button>
       </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-smtp">
+          <span class="nav-icon">📧</span> Cấu hình Gmail OTP
+        </button>
+      </li>
+      <li class="admin-nav-item">
+        <button class="nav-tab-btn" data-tab="tab-users">
+          <span class="nav-icon">👥</span> Đoàn viên đã đăng ký
+          <span class="badge-count" id="badge-user-count">0</span>
+        </button>
+      </li>
     </ul>
 
     <div class="admin-sidebar-footer" style="display: flex; flex-direction: column; gap: 8px;">
@@ -549,6 +560,129 @@
       </form>
     </div>
   </div>
+
+    <!-- =========================================================================
+         TAB 7: CẤU HÌNH GMAIL SMTP OTP BẢO MẬT
+         ========================================================================= -->
+    <div class="tab-content" id="tab-smtp">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>Cấu Hình Gửi Mã OTP Qua Gmail</h2>
+            <p style="font-size: 0.82rem; color: var(--admin-muted); margin-top: 4px;">
+              Bảo mật 2 lớp cho Đoàn viên đăng ký tài khoản qua Gmail chính thức của Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh
+            </p>
+          </div>
+          <span id="smtp-status-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(52, 211, 153, 0.3);">
+            ● Hệ Thống OTP Hoạt Động Sẵn Sàng
+          </span>
+        </div>
+
+        <form id="form-smtp-settings">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Gmail Gửi Thư Xác Thực (Sender Gmail) *</label>
+              <input type="email" id="smtp-sender-email" class="form-input" placeholder="Ví dụ: doanxahoakhanh.tayninh@gmail.com" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tên Hiển Thị Trong Hộp Thư Đoàn Viên</label>
+              <input type="text" id="smtp-sender-name" class="form-input" value="Đoàn Xã Hòa Khánh (Tây Ninh)">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Mật Khẩu Ứng Dụng Google (Google App Password 16 chữ số)</span>
+              <span id="smtp-pwd-status" style="font-size: 0.75rem; color: #38bdf8;">Chưa cấu hình (Đang chạy chế độ mô phỏng)</span>
+            </label>
+            <input type="password" id="smtp-app-password" class="form-input" placeholder="Nhập 16 ký tự mã ứng dụng Google (ví dụ: abcd efgh ijkl mnop)...">
+            <small style="color: var(--admin-muted); font-size: 0.78rem; display: block; margin-top: 5px;">
+              💡 <em>Lưu ý bảo mật:</em> Đây là <strong>Mật khẩu ứng dụng (App Password)</strong> tạo riêng trong tài khoản Google, không phải mật khẩu đăng nhập tài khoản thông thường.
+            </small>
+          </div>
+
+          <!-- HƯỚNG DẪN 3 BƯỚC NHANH LẤY MẬT KHẨU ỨNG DỤNG GOOGLE -->
+          <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 14px; margin: 14px 0; font-size: 0.8rem; color: #cbd5e1; line-height: 1.6;">
+            <div style="color: #38bdf8; font-weight: 700; margin-bottom: 6px;">📖 Cách lấy Google App Password cho Gmail Đoàn xã trong 1 phút:</div>
+            <ol style="margin: 0; padding-left: 20px;">
+              <li>Truy cập <a href="https://myaccount.google.com/security" target="_blank" style="color: #38bdf8; text-decoration: underline;">myaccount.google.com/security</a> bằng tài khoản Gmail của Đoàn xã.</li>
+              <li>Bật tính năng <strong>"Xác minh 2 bước" (2-Step Verification)</strong> nếu chưa bật.</li>
+              <li>Tại ô tìm kiếm của Google Account, gõ chữ <strong>"Mật khẩu ứng dụng" (App Passwords)</strong>.</li>
+              <li>Đặt tên ứng dụng là <em>"Cổng thanh niên Hòa Khánh"</em> &gt; bấm <strong>Tạo</strong> &gt; Google sẽ cấp 1 mã 16 chữ số (dạng <code>abcd efgh ijkl mnop</code>). Sao chép và dán vào ô trên rồi bấm Lưu!</li>
+            </ol>
+          </div>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary" id="btn-save-smtp">
+              💾 Lưu Cấu Hình Gmail OTP
+            </button>
+          </div>
+        </form>
+
+        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0;">
+
+        <!-- KHUNG KIỂM TRA GỬI THỬ NGHIỆM -->
+        <div>
+          <h3 style="font-size: 1rem; color: #fff; margin-bottom: 8px;">🚀 Kiểm Tra Gửi Email Xác Thực Thực Tế</h3>
+          <p style="font-size: 0.8rem; color: var(--admin-muted); margin-bottom: 12px;">
+            Gửi 1 email mẫu chứa mã OTP 6 số đến hộp thư của đồng chí để kiểm tra hệ thống hoạt động chính xác 100%:
+          </p>
+          <div style="display: flex; gap: 8px; max-width: 520px;">
+            <input type="email" id="smtp-test-email" class="form-input" placeholder="Nhập địa chỉ Gmail nhận thử nghiệm...">
+            <button type="button" class="btn btn-success" id="btn-run-smtp-test" style="white-space: nowrap;">
+              📨 Gửi Thử Ngay
+            </button>
+          </div>
+          <div id="smtp-test-result" style="margin-top: 10px; font-size: 0.82rem; display: none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TAB 8: DANH SÁCH ĐOÀN VIÊN ĐÃ ĐĂNG KÝ (XÁC THỰC GMAIL)
+         ========================================================================= -->
+    <div class="tab-content" id="tab-users">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h2>Danh Sách Đoàn Viên Đã Đăng Ký Tài Khoản</h2>
+            <p style="font-size: 0.82rem; color: var(--admin-muted); margin-top: 4px;">
+              Quản lý tài khoản Đoàn viên số hóa - Đã qua bước xác minh mã OTP Gmail chính chủ
+            </p>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-outline" id="btn-refresh-users">
+              🔄 Tải Lại Danh Sách
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th>Họ Và Tên Đoàn Viên</th>
+                <th>Tên Đăng Nhập / SĐT</th>
+                <th>Chi Đoàn / Ấp</th>
+                <th>Địa Chỉ Gmail</th>
+                <th>Xác Thực OTP</th>
+                <th>Quyền Hạn</th>
+                <th>Ngày Đăng Ký</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-table-body">
+              <tr>
+                <td colspan="8" style="text-align: center; color: var(--admin-muted); padding: 30px;">
+                  Đang tải danh sách tài khoản Đoàn viên...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <!-- MODAL: THẺ ĐẠI BIỂU ĐIỆN TỬ & MÃ QR CÁ NHÂN -->
   <div class="modal-overlay" id="modal-delegate-qr-card">

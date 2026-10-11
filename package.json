@@ -17,5 +17,8 @@
     "faceid-checkin"
   ],
   "author": "Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "nodemailer": "^10.1.0"
+  }
 }

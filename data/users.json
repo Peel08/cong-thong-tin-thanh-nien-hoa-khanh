@@ -8,5 +8,31 @@
     "hamlet": "BCH Đoàn Xã Hòa Khánh",
     "phone": "0947463036",
     "createdAt": "2026-10-11 19:00:00"
+  },
+  {
+    "id": "USR-1791722072720",
+    "username": "0988776655",
+    "password": "password123",
+    "fullName": "Trần Văn Hòa",
+    "role": "member",
+    "hamlet": "Ấp Thuận Hòa 1",
+    "phone": "0988776655",
+    "email": "doanvien.hoakhanh@gmail.com",
+    "isEmailVerified": true,
+    "verifiedAt": "19:34:32 11/10/2026",
+    "createdAt": "19:34:32 11/10/2026"
+  },
+  {
+    "id": "USR-1791722199111",
+    "username": "0912345678",
+    "password": "admin123",
+    "fullName": "Le Quoc Bao",
+    "role": "member",
+    "hamlet": "Ấp Thuận Hòa 2",
+    "phone": "0912345678",
+    "email": "lequocbao.hoakhanh@gmail.com",
+    "isEmailVerified": true,
+    "verifiedAt": "19:36:39 11/10/2026",
+    "createdAt": "19:36:39 11/10/2026"
   }
 ]

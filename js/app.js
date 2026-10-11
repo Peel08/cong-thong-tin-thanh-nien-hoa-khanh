@@ -592,20 +592,141 @@ function initAuthSystem() {
     });
   }
 
-  // 2. Submit Đăng ký Đoàn viên
+  // 2. Gửi mã OTP qua Gmail khi Đăng ký Đoàn viên
+  const btnSendRegOtp = document.getElementById('btn-send-reg-otp');
+  const otpStatusEl = document.getElementById('otp-send-status');
+  const otpTimerBadge = document.getElementById('otp-timer-badge');
+  let otpCooldownTimer = null;
+
+  if (btnSendRegOtp) {
+    btnSendRegOtp.addEventListener('click', async () => {
+      const emailInput = document.getElementById('reg-email');
+      const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+      const fullName = (document.getElementById('reg-fullname')?.value || '').trim();
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!email || !emailRegex.test(email)) {
+        showToast('Vui lòng nhập địa chỉ Gmail chính xác (Ví dụ: doanvien@gmail.com)!', 'warning');
+        if (emailInput) emailInput.focus();
+        return;
+      }
+
+      btnSendRegOtp.disabled = true;
+      btnSendRegOtp.textContent = '⏳ Đang gửi...';
+      if (otpStatusEl) {
+        otpStatusEl.style.display = 'block';
+        otpStatusEl.style.color = '#38bdf8';
+        otpStatusEl.innerHTML = '⚡ Đang kết nối máy chủ gửi mã OTP đến <strong>' + email + '</strong>...';
+      }
+
+      try {
+        const res = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, fullName, type: 'register', purpose: 'Đăng ký tài khoản Đoàn viên' })
+        }).then(r => r.json());
+
+        if (res.success) {
+          showToast(res.message, 'success');
+          if (otpStatusEl) {
+            otpStatusEl.style.display = 'block';
+            if (res.mode === 'smtp') {
+              otpStatusEl.style.color = '#4ade80';
+              otpStatusEl.innerHTML = '✅ Đã gửi mã OTP đến <strong>' + email + '</strong>! Vui lòng mở Gmail để xem mã.';
+            } else {
+              otpStatusEl.style.color = '#fde047';
+              otpStatusEl.innerHTML = '✅ Mã OTP bảo mật: <strong style="font-size: 1rem; color: #4ade80; letter-spacing: 2px;">' + (res.debugOtp || '') + '</strong> (Đã tự điền vào ô bên dưới)';
+            }
+          }
+
+          // Nếu có debugOtp (chế độ thử nghiệm), tự điền vào ô OTP và focus
+          if (res.debugOtp) {
+            const otpInput = document.getElementById('reg-otp');
+            if (otpInput) {
+              otpInput.value = res.debugOtp;
+            }
+          }
+          const otpInput = document.getElementById('reg-otp');
+          if (otpInput) otpInput.focus();
+
+          // Bộ đếm ngược 60 giây
+          let secondsLeft = 60;
+          if (otpTimerBadge) otpTimerBadge.textContent = `Gửi lại sau ${secondsLeft}s`;
+          btnSendRegOtp.textContent = `⏳ ${secondsLeft}s`;
+          btnSendRegOtp.disabled = true;
+
+          if (otpCooldownTimer) clearInterval(otpCooldownTimer);
+          otpCooldownTimer = setInterval(() => {
+            secondsLeft -= 1;
+            if (secondsLeft > 0) {
+              btnSendRegOtp.textContent = `⏳ ${secondsLeft}s`;
+              if (otpTimerBadge) otpTimerBadge.textContent = `Gửi lại sau ${secondsLeft}s`;
+            } else {
+              clearInterval(otpCooldownTimer);
+              btnSendRegOtp.disabled = false;
+              btnSendRegOtp.textContent = '🔄 Gửi lại OTP';
+              if (otpTimerBadge) otpTimerBadge.textContent = 'Có thể gửi lại mã';
+            }
+          }, 1000);
+
+        } else {
+          showToast(res.message || 'Không thể gửi mã OTP!', 'warning');
+          btnSendRegOtp.disabled = false;
+          btnSendRegOtp.textContent = '📩 Lấy mã OTP';
+          if (otpStatusEl) {
+            otpStatusEl.style.display = 'block';
+            otpStatusEl.style.color = '#f87171';
+            otpStatusEl.textContent = '❌ ' + (res.message || 'Lỗi gửi mã OTP');
+          }
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ gửi OTP!', 'warning');
+        btnSendRegOtp.disabled = false;
+        btnSendRegOtp.textContent = '📩 Lấy mã OTP';
+      }
+    });
+  }
+
+  // 3. Submit Đăng ký Đoàn viên (Bắt buộc kiểm tra mã OTP)
   if (formReg) {
     formReg.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fullName = document.getElementById('reg-fullname').value.trim();
       const phone = document.getElementById('reg-phone').value.trim();
       const hamlet = document.getElementById('reg-hamlet').value;
+      const email = document.getElementById('reg-email').value.trim().toLowerCase();
+      const otp = document.getElementById('reg-otp').value.trim();
       const password = document.getElementById('reg-password').value.trim();
+      const btnSubmit = document.getElementById('btn-submit-reg');
+
+      if (!email) {
+        showToast('Vui lòng nhập địa chỉ Gmail nhận mã xác thực!', 'warning');
+        document.getElementById('reg-email')?.focus();
+        return;
+      }
+
+      if (!otp || otp.length !== 6) {
+        showToast('Vui lòng bấm "Lấy mã OTP" và nhập chính xác mã 06 chữ số nhận từ Gmail!', 'warning');
+        document.getElementById('reg-otp')?.focus();
+        return;
+      }
+
+      if (password.length < 6) {
+        showToast('Mật khẩu đăng nhập phải có ít nhất 06 ký tự!', 'warning');
+        document.getElementById('reg-password')?.focus();
+        return;
+      }
+
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = '🛡️ Đang xác thực OTP & khởi tạo tài khoản...';
+      }
 
       try {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullName, username: phone, phone, hamlet, password })
+          body: JSON.stringify({ fullName, username: phone, phone, hamlet, email, otp, password })
         }).then(r => r.json());
 
         if (res.success) {
@@ -613,12 +734,20 @@ function initAuthSystem() {
           localStorage.setItem('hoakhanh_auth_user', JSON.stringify(res.user));
           updateAuthUI();
           closeModal();
-          showToast(`Chúc mừng đồng chí ${res.user.fullName} đã tạo tài khoản thành công!`, 'success');
+          showToast(`Chúc mừng đồng chí ${res.user.fullName} đã xác thực Gmail và tạo tài khoản Đoàn viên thành công!`, 'success');
+          formReg.reset();
+          if (otpStatusEl) otpStatusEl.style.display = 'none';
+          if (otpTimerBadge) otpTimerBadge.textContent = '';
         } else {
           showToast(res.message || 'Lỗi đăng ký tài khoản!', 'warning');
         }
       } catch (err) {
         showToast('Lỗi kết nối máy chủ!', 'warning');
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = '🛡️ Xác Thực OTP & Đăng Ký Tài Khoản';
+        }
       }
     });
   }

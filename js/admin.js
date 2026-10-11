@@ -46,7 +46,9 @@ window.switchAdminTab = function(tabId) {
     'tab-youth': '09 Gương thanh niên tiêu biểu 09 ấp',
     'tab-volunteers': 'Đăng ký tình nguyện',
     'tab-ideas': 'Hòm thư hiến kế',
-    'tab-attendance': 'Quản lý điểm danh AI FaceID'
+    'tab-attendance': 'Quản lý điểm danh AI FaceID',
+    'tab-smtp': 'Cấu hình Gmail OTP Bảo Mật',
+    'tab-users': 'Danh sách Đoàn viên đã đăng ký'
   };
   const titleEl = document.getElementById('admin-page-title');
   if (titleEl && titles[tabId]) titleEl.textContent = titles[tabId];
@@ -67,7 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSync) {
     btnSync.addEventListener('click', () => {
       loadAllData();
-      showToast('Đang tải và đồng bộ lại dữ liệu...', 'success');
+      loadSmtpConfig();
+      loadUsersList();
+      showToast('Đang tải và đồng bộ lại toàn bộ dữ liệu...', 'success');
     });
   }
 
@@ -79,6 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initYouthEditForm();
   initVolunteerActions();
   initAttendanceActions();
+  initSmtpSettings();
+  initUsersManagement();
 });
 
 function checkAdminAuth() {
@@ -964,4 +970,213 @@ function downloadCsv(content, filename) {
   link.click();
   document.body.removeChild(link);
   showToast('Đã xuất file Excel/CSV thành công!', 'success');
+}
+
+/* =========================================================================
+   QUẢN LÝ CẤU HÌNH GMAIL SMTP OTP
+   ========================================================================= */
+async function loadSmtpConfig() {
+  try {
+    const res = await fetch('/api/smtp/config').then(r => r.json());
+    if (res.success) {
+      const emailInput = document.getElementById('smtp-sender-email');
+      const nameInput = document.getElementById('smtp-sender-name');
+      const pwdStatus = document.getElementById('smtp-pwd-status');
+      const statusBadge = document.getElementById('smtp-status-badge');
+
+      if (emailInput && res.senderEmail) emailInput.value = res.senderEmail;
+      if (nameInput && res.senderName) nameInput.value = res.senderName;
+      if (pwdStatus) {
+        if (res.hasAppPassword) {
+          pwdStatus.innerHTML = '<span style="color: #34d399; font-weight: 700;">✅ Đã liên kết Google App Password</span>';
+          if (statusBadge) {
+            statusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+            statusBadge.style.color = '#34d399';
+            statusBadge.innerHTML = '● Gửi thật qua Gmail SMTP (Chính thức)';
+          }
+        } else {
+          pwdStatus.innerHTML = '<span style="color: #fde047;">Chưa có App Password (Đang ở chế độ mô phỏng)</span>';
+          if (statusBadge) {
+            statusBadge.style.background = 'rgba(234, 179, 8, 0.15)';
+            statusBadge.style.color = '#fde047';
+            statusBadge.innerHTML = '● Chế độ thử nghiệm OTP';
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi tải cấu hình SMTP:', err);
+  }
+}
+
+function initSmtpSettings() {
+  loadSmtpConfig();
+
+  const formSmtp = document.getElementById('form-smtp-settings');
+  if (formSmtp) {
+    formSmtp.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const senderEmail = document.getElementById('smtp-sender-email').value.trim();
+      const senderName = document.getElementById('smtp-sender-name').value.trim();
+      const appPassword = document.getElementById('smtp-app-password').value.trim();
+      const btnSave = document.getElementById('btn-save-smtp');
+
+      if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.textContent = '⏳ Đang lưu cấu hình...';
+      }
+
+      try {
+        const payload = { senderEmail, senderName };
+        if (appPassword) payload.appPassword = appPassword;
+
+        const res = await fetch('/api/smtp/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        if (res.success) {
+          showToast(res.message, 'success');
+          document.getElementById('smtp-app-password').value = '';
+          await loadSmtpConfig();
+        } else {
+          showToast(res.message || 'Lỗi lưu cấu hình!', 'warning');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ!', 'warning');
+      } finally {
+        if (btnSave) {
+          btnSave.disabled = false;
+          btnSave.textContent = '💾 Lưu Cấu Hình Gmail OTP';
+        }
+      }
+    });
+  }
+
+  // Nút kiểm tra gửi email thực tế
+  const btnTest = document.getElementById('btn-run-smtp-test');
+  const testResultEl = document.getElementById('smtp-test-result');
+
+  if (btnTest) {
+    btnTest.addEventListener('click', async () => {
+      const emailInput = document.getElementById('smtp-test-email');
+      const testEmail = emailInput ? emailInput.value.trim().toLowerCase() : '';
+
+      if (!testEmail || !testEmail.includes('@')) {
+        showToast('Vui lòng nhập địa chỉ Gmail nhận thử nghiệm hợp lệ!', 'warning');
+        if (emailInput) emailInput.focus();
+        return;
+      }
+
+      btnTest.disabled = true;
+      btnTest.textContent = '⏳ Đang gửi email...';
+      if (testResultEl) {
+        testResultEl.style.display = 'block';
+        testResultEl.style.color = '#38bdf8';
+        testResultEl.innerHTML = '⚡ Đang gửi thử nghiệm đến <strong>' + testEmail + '</strong>...';
+      }
+
+      try {
+        const res = await fetch('/api/smtp/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: testEmail })
+        }).then(r => r.json());
+
+        if (res.success) {
+          showToast(res.message, 'success');
+          if (testResultEl) {
+            testResultEl.style.display = 'block';
+            if (res.mode === 'smtp') {
+              testResultEl.style.color = '#34d399';
+              testResultEl.innerHTML = '🎉 <strong>Thành công!</strong> Đã gửi email OTP thực tế tới <strong>' + testEmail + '</strong>. Vui lòng kiểm tra Hộp thư đến hoặc Thư rác.';
+            } else {
+              testResultEl.style.color = '#fde047';
+              testResultEl.innerHTML = '⚠️ <strong>Chế độ mô phỏng:</strong> ' + res.message + '<br>👉 Để gửi thật 100% đến Gmail, hãy dán Google App Password vào ô trên và bấm Lưu.';
+            }
+          }
+        } else {
+          showToast(res.message || 'Lỗi gửi thư!', 'warning');
+          if (testResultEl) {
+            testResultEl.style.display = 'block';
+            testResultEl.style.color = '#f87171';
+            testResultEl.textContent = '❌ Lỗi: ' + res.message;
+          }
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ gửi thử!', 'warning');
+      } finally {
+        btnTest.disabled = false;
+        btnTest.textContent = '📨 Gửi Thử Ngay';
+      }
+    });
+  }
+}
+
+/* =========================================================================
+   QUẢN LÝ DANH SÁCH ĐOÀN VIÊN ĐÃ ĐĂNG KÝ
+   ========================================================================= */
+let registeredUsersList = [];
+
+async function loadUsersList() {
+  const tbody = document.getElementById('admin-users-table-body');
+  const badgeCount = document.getElementById('badge-user-count');
+
+  try {
+    const res = await fetch('/api/auth/users').then(r => r.json());
+    if (Array.isArray(res)) {
+      registeredUsersList = res;
+      if (badgeCount) badgeCount.textContent = registeredUsersList.length;
+
+      if (!tbody) return;
+      if (registeredUsersList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--admin-muted); padding: 30px;">Chưa có tài khoản Đoàn viên nào đăng ký.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = registeredUsersList.map((u, idx) => `
+        <tr>
+          <td style="text-align: center; font-weight: 700; color: var(--admin-cyan);">${idx + 1}</td>
+          <td>
+            <strong style="color: #fff;">${u.fullName}</strong>
+          </td>
+          <td><code>${u.username}</code></td>
+          <td><span class="hamlet-pill">${u.hamlet || 'Đoàn Xã'}</span></td>
+          <td>
+            <a href="mailto:${u.email || ''}" style="color: #38bdf8; text-decoration: none;">
+              ${u.email || '<span style="color: #64748b;">Chưa liên kết</span>'}
+            </a>
+          </td>
+          <td style="text-align: center;">
+            ${u.isEmailVerified
+              ? '<span style="background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(52, 211, 153, 0.3);">✅ Đã xác thực OTP</span>'
+              : '<span style="background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem;">Chưa xác thực</span>'}
+          </td>
+          <td>
+            <span style="font-size: 0.78rem; font-weight: 700; color: ${u.role === 'admin' ? '#ffcc00' : '#94a3b8'};">
+              ${u.role === 'admin' ? '👑 Quản Trị Viên' : '👤 Đoàn Viên'}
+            </span>
+          </td>
+          <td style="font-size: 0.78rem; color: var(--admin-muted);">${u.createdAt || 'Mặc định'}</td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    console.error('Lỗi tải danh sách users:', err);
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #f87171; padding: 20px;">Lỗi kết nối khi tải danh sách Đoàn viên!</td></tr>';
+    }
+  }
+}
+
+function initUsersManagement() {
+  loadUsersList();
+  const btnRefresh = document.getElementById('btn-refresh-users');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      loadUsersList();
+      showToast('Đã làm mới danh sách tài khoản Đoàn viên!', 'success');
+    });
+  }
 }
