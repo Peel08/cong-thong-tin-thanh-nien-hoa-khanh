@@ -95,11 +95,19 @@ async function sendGmailOtp(toEmail, otpCode, purpose = "Đăng ký tài khoản
         </div>
       `;
 
+      const textContent = `Kính gửi đồng chí,\n\nĐồng chí đang thực hiện ${purpose}.\nMã xác thực OTP bảo mật 06 chữ số của đồng chí là: ${otpCode}\nMã có hiệu lực trong 05 phút.\n\n⚠️ Lưu ý bảo mật: Tuyệt đối không chia sẻ mã này cho bất kỳ ai.\n\nĐoàn TNCS Hồ Chí Minh Xã Hòa Khánh - Tỉnh Tây Ninh\nHotline: ${db.organization?.phone || '0947463036'} | Email: ${senderEmail}\nHệ thống được nghiên cứu và phát triển bởi: Lương Tấn Phát`;
+
       await transporter.sendMail({
-        from: `"${senderName}" <${senderEmail}>`,
+        from: `"Lương Tấn Phát - Đoàn Xã Hòa Khánh" <${senderEmail}>`,
         to: toEmail,
-        subject: `[Đoàn Xã Hòa Khánh] Mã xác thực OTP đăng ký: ${otpCode}`,
-        html: htmlContent
+        replyTo: senderEmail,
+        subject: `Mã xác thực OTP Đoàn Xã Hòa Khánh: ${otpCode}`,
+        text: textContent,
+        html: htmlContent,
+        headers: {
+          'X-Priority': '1',
+          'Importance': 'high'
+        }
       });
 
       console.log(`✓ Đã gửi email thực tế thành công qua Gmail SMTP tới: ${toEmail}`);
