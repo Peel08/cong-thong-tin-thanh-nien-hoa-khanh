@@ -1,0 +1,12 @@
+[
+  {
+    "id": "USR-ADMIN-01",
+    "username": "admin",
+    "password": "admin123",
+    "fullName": "Quản Trị Viên BCH Đoàn Xã Hòa Khánh",
+    "role": "admin",
+    "hamlet": "BCH Đoàn Xã Hòa Khánh",
+    "phone": "0947463036",
+    "createdAt": "2026-10-11 19:00:00"
+  }
+]

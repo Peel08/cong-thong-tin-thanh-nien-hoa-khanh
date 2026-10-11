@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Khởi tạo các module
   initStats(data.organization);
+  renderOrgInfo(data.organization);
   initYouthSection(data.outstandingYouth);
   initJobsSection(data.jobs);
   initActivitiesSection(data.activities);
@@ -63,6 +64,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   initIdeaForm();
   initMobileMenu();
   initQuickModals();
+  initAuthSystem();
+
+  // Tự động đồng bộ lại khi người dùng quay lại tab từ trang Quản trị Admin
+  window.addEventListener('focus', async () => {
+    try {
+      const r = await fetch('/api/data?t=' + Date.now());
+      if (r.ok) {
+        const fresh = await r.json();
+        renderOrgInfo(fresh.organization);
+        initStats(fresh.organization);
+      }
+    } catch (e) {}
+  });
 
   if (window.FaceCheckin) {
     window.FaceCheckin.init();
@@ -427,3 +441,253 @@ function initQuickModals() {
     }
   });
 }
+
+/* 10. ĐỒNG BỘ DỮ LIỆU ĐOÀN XÃ (THÔNG TIN HÀNH CHÍNH & LIÊN HỆ) */
+function renderOrgInfo(org) {
+  if (!org) return;
+
+  // 1. Điện thoại & Hotline
+  const phone = org.phone || '0947463036';
+  const topHotline = document.getElementById('top-hotline-text');
+  if (topHotline) topHotline.textContent = phone;
+
+  const contactPhone = document.getElementById('contact-phone');
+  if (contactPhone) contactPhone.textContent = `${phone} (Văn phòng Đoàn xã)`;
+
+  const footerPhone = document.getElementById('footer-phone');
+  if (footerPhone) footerPhone.textContent = phone;
+
+  // 2. Địa chỉ
+  const address = org.address || 'Quốc lộ N2, ấp Thuận Hòa 2, xã Hòa Khánh, tỉnh Tây Ninh';
+  const contactAddress = document.getElementById('contact-address');
+  if (contactAddress) contactAddress.textContent = address;
+
+  const footerAddress = document.getElementById('footer-address');
+  if (footerAddress) footerAddress.textContent = address;
+
+  // 3. Email
+  const email = org.email || 'doanxahoakhanh.tayninh@gmail.com';
+  const contactEmail = document.getElementById('contact-email');
+  if (contactEmail) contactEmail.textContent = email;
+
+  const footerEmail = document.getElementById('footer-email');
+  if (footerEmail) footerEmail.textContent = email;
+
+  // 4. Slogan
+  const slogan = org.slogan || 'Khát vọng - Tiên phong - Bản lĩnh - Đoàn kết - Sáng tạo';
+  const heroSlogan = document.getElementById('hero-slogan');
+  if (heroSlogan) heroSlogan.textContent = `"${slogan}"`;
+
+  const footerSlogan = document.getElementById('footer-slogan');
+  if (footerSlogan) footerSlogan.textContent = slogan;
+
+  // 5. Fanpage & Zalo
+  if (org.fanpage) {
+    const fbBtn = document.getElementById('contact-fanpage-btn');
+    if (fbBtn) fbBtn.href = org.fanpage;
+  }
+  if (org.zalo) {
+    const zaloBtn = document.getElementById('contact-zalo-btn');
+    if (zaloBtn) zaloBtn.href = org.zalo;
+    const qrImg = document.getElementById('contact-qr-img');
+    if (qrImg) qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(org.zalo)}`;
+  }
+}
+
+/* 11. HỆ THỐNG TÀI KHOẢN ĐOÀN VIÊN & QUẢN TRỊ ADMIN */
+function initAuthSystem() {
+  const modal = document.getElementById('auth-modal');
+  const openTopBtn = document.getElementById('btn-open-auth-modal');
+  const openNavBtn = document.getElementById('btn-nav-auth');
+  const closeBtn = document.getElementById('close-auth-modal');
+
+  // Mở / Đóng modal
+  const openModal = () => { if (modal) modal.classList.add('open'); };
+  const closeModal = () => { if (modal) modal.classList.remove('open'); };
+
+  if (openTopBtn) openTopBtn.addEventListener('click', openModal);
+  if (openNavBtn) openNavBtn.addEventListener('click', openModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  // Chuyển Tab Đoàn viên / Admin
+  const tabMember = document.getElementById('tab-auth-member');
+  const tabAdmin = document.getElementById('tab-auth-admin');
+  const panelMember = document.getElementById('auth-member-panel');
+  const panelAdmin = document.getElementById('auth-admin-panel');
+
+  if (tabMember && tabAdmin) {
+    tabMember.addEventListener('click', () => {
+      tabMember.style.background = 'var(--union-blue)';
+      tabMember.style.color = '#fff';
+      tabAdmin.style.background = 'transparent';
+      tabAdmin.style.color = '#94a3b8';
+      if (panelMember) panelMember.style.display = 'block';
+      if (panelAdmin) panelAdmin.style.display = 'none';
+    });
+
+    tabAdmin.addEventListener('click', () => {
+      tabAdmin.style.background = 'linear-gradient(135deg, #da251d 0%, #b91c1c 100%)';
+      tabAdmin.style.color = '#fff';
+      tabMember.style.background = 'transparent';
+      tabMember.style.color = '#94a3b8';
+      if (panelMember) panelMember.style.display = 'none';
+      if (panelAdmin) panelAdmin.style.display = 'block';
+    });
+  }
+
+  // Chuyển Đăng nhập / Đăng ký Đoàn viên
+  const linkShowReg = document.getElementById('link-show-register');
+  const linkShowLog = document.getElementById('link-show-login');
+  const formLogin = document.getElementById('form-member-login');
+  const formReg = document.getElementById('form-member-register');
+
+  if (linkShowReg && formLogin && formReg) {
+    linkShowReg.addEventListener('click', (e) => {
+      e.preventDefault();
+      formLogin.style.display = 'none';
+      formReg.style.display = 'block';
+    });
+  }
+
+  if (linkShowLog && formLogin && formReg) {
+    linkShowLog.addEventListener('click', (e) => {
+      e.preventDefault();
+      formReg.style.display = 'none';
+      formLogin.style.display = 'block';
+    });
+  }
+
+  // 1. Submit Đăng nhập Đoàn viên
+  if (formLogin) {
+    formLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('member-login-username').value.trim();
+      const password = document.getElementById('member-login-password').value.trim();
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        }).then(r => r.json());
+
+        if (res.success) {
+          localStorage.setItem('hoakhanh_auth_token', res.token);
+          localStorage.setItem('hoakhanh_auth_user', JSON.stringify(res.user));
+          updateAuthUI();
+          closeModal();
+          showToast(`Chào mừng đồng chí ${res.user.fullName} đã đăng nhập!`, 'success');
+        } else {
+          showToast(res.message || 'Sai tên đăng nhập hoặc mật khẩu!', 'warning');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ!', 'warning');
+      }
+    });
+  }
+
+  // 2. Submit Đăng ký Đoàn viên
+  if (formReg) {
+    formReg.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById('reg-fullname').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const hamlet = document.getElementById('reg-hamlet').value;
+      const password = document.getElementById('reg-password').value.trim();
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName, username: phone, phone, hamlet, password })
+        }).then(r => r.json());
+
+        if (res.success) {
+          localStorage.setItem('hoakhanh_auth_token', res.token);
+          localStorage.setItem('hoakhanh_auth_user', JSON.stringify(res.user));
+          updateAuthUI();
+          closeModal();
+          showToast(`Chúc mừng đồng chí ${res.user.fullName} đã tạo tài khoản thành công!`, 'success');
+        } else {
+          showToast(res.message || 'Lỗi đăng ký tài khoản!', 'warning');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ!', 'warning');
+      }
+    });
+  }
+
+  // 3. Submit Đăng nhập Admin
+  const formAdmin = document.getElementById('form-admin-login');
+  if (formAdmin) {
+    formAdmin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('admin-login-username').value.trim();
+      const password = document.getElementById('admin-login-password').value.trim();
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        }).then(r => r.json());
+
+        if (res.success && res.user.role === 'admin') {
+          localStorage.setItem('hoakhanh_admin_token', res.token);
+          localStorage.setItem('hoakhanh_admin_user', JSON.stringify(res.user));
+          showToast('Xác thực quản trị viên thành công! Đang chuyển hướng...', 'success');
+          setTimeout(() => {
+            window.location.href = 'admin.html';
+          }, 600);
+        } else {
+          showToast('Tài khoản không có quyền quản trị hoặc sai mật khẩu!', 'warning');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ!', 'warning');
+      }
+    });
+  }
+
+  // 4. Đăng xuất
+  const btnLogout = document.getElementById('btn-top-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      localStorage.removeItem('hoakhanh_auth_token');
+      localStorage.removeItem('hoakhanh_auth_user');
+      updateAuthUI();
+      showToast('Đã đăng xuất tài khoản!', 'info');
+    });
+  }
+
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const userJson = localStorage.getItem('hoakhanh_auth_user');
+  const btnOpen = document.getElementById('btn-open-auth-modal');
+  const infoBox = document.getElementById('top-user-info');
+  const nameEl = document.getElementById('top-user-name');
+  const navBtn = document.getElementById('btn-nav-auth');
+
+  if (userJson) {
+    try {
+      const user = JSON.parse(userJson);
+      if (btnOpen) btnOpen.style.display = 'none';
+      if (infoBox) infoBox.style.display = 'inline-flex';
+      if (nameEl) nameEl.textContent = `👤 ${user.fullName}`;
+      if (navBtn) navBtn.textContent = `👤 ${user.fullName.split(' ').pop()}`;
+      return;
+    } catch (e) {}
+  }
+
+  if (btnOpen) btnOpen.style.display = 'inline-block';
+  if (infoBox) infoBox.style.display = 'none';
+  if (navBtn) navBtn.textContent = '👤 Đăng Nhập';
+}
+

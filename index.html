@@ -26,9 +26,18 @@
         <span>✨ Chào mừng Ra mắt Cổng Thông Tin Thanh Niên Xã Hòa Khánh & Ngày hội Chuyển đổi số 2026!</span>
       </div>
       <div class="top-notice-right">
-        <span class="top-notice-link">📞 Hotline: 0276.3852.113</span>
-        <a href="admin.html" class="top-notice-link" style="color: var(--union-gold); font-weight: 700;">⚙️ Quản trị Đoàn xã</a>
+        <span class="top-notice-link" id="top-hotline-container">📞 Hotline: <strong id="top-hotline-text">0947463036</strong></span>
+        <a href="admin.html" class="top-notice-link" id="top-link-admin" style="color: var(--union-gold); font-weight: 700;">⚙️ Quản trị Đoàn xã</a>
         <a href="#face-checkin-modal" class="top-notice-link open-checkin-btn">⚡ Điểm danh FaceID</a>
+        <div id="top-auth-box" style="display: inline-flex; align-items: center; margin-left: 6px;">
+          <button type="button" id="btn-open-auth-modal" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 0.76rem; font-weight: 700; padding: 3px 10px; border-radius: 14px; cursor: pointer;">
+            👤 Đăng Nhập
+          </button>
+          <div id="top-user-info" style="display: none; align-items: center; gap: 6px;">
+            <span id="top-user-name" style="color: #ffcc00; font-weight: 700; font-size: 0.78rem;"></span>
+            <button type="button" id="btn-top-logout" style="background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; color: #fca5a5; border-radius: 10px; padding: 1px 7px; font-size: 0.72rem; cursor: pointer;">Thoát</button>
+          </div>
+        </div>
       </div>
     </div>
   </aside>
@@ -58,6 +67,11 @@
             <a href="#checkin" class="nav-link highlight-btn open-checkin-btn" id="nav-checkin-trigger">
               📷 Điểm danh FaceID
             </a>
+          </li>
+          <li class="nav-item">
+            <button type="button" id="btn-nav-auth" class="btn btn-sm btn-outline" style="border-color: var(--union-cyan); color: var(--union-cyan); padding: 6px 12px; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+              👤 Đăng Nhập
+            </button>
           </li>
           <li class="nav-item">
             <a href="admin.html" class="nav-link" style="border: 1px dashed var(--union-gold); color: var(--union-gold); padding: 7px 12px; font-size: 0.82rem;" title="Bảng quản trị cho Ban Thường vụ Đoàn xã">
@@ -436,7 +450,7 @@
               <div class="contact-icon">📍</div>
               <div>
                 <strong style="display: block; color: #fff;">Địa chỉ cơ quan:</strong>
-                <span>Quốc lộ N2, ấp Thuận Hòa 2, xã Hòa Khánh, tỉnh Tây Ninh</span>
+                <span id="contact-address">Quốc lộ N2, ấp Thuận Hòa 2, xã Hòa Khánh, tỉnh Tây Ninh</span>
               </div>
             </div>
 
@@ -444,7 +458,7 @@
               <div class="contact-icon">📞</div>
               <div>
                 <strong style="display: block; color: #fff;">Điện thoại liên hệ:</strong>
-                <span>0276.3852.113 (Văn phòng Đoàn xã)</span>
+                <span id="contact-phone">0947463036 (Văn phòng Đoàn xã)</span>
               </div>
             </div>
 
@@ -452,7 +466,7 @@
               <div class="contact-icon">✉️</div>
               <div>
                 <strong style="display: block; color: #fff;">Thư điện tử (Email):</strong>
-                <span>doanxahoakhanh.tayninh@gmail.com</span>
+                <span id="contact-email">doanxahoakhanh.tayninh@gmail.com</span>
               </div>
             </div>
 
@@ -460,7 +474,7 @@
               <div class="contact-icon">🌐</div>
               <div>
                 <strong style="display: block; color: #fff;">Mạng xã hội & Kênh số:</strong>
-                <span>Fanpage: Tuổi trẻ Xã Hòa Khánh - Tây Ninh | Zalo Official Account</span>
+                <span id="contact-social">Fanpage: Tuổi trẻ Xã Hòa Khánh - Tây Ninh | Zalo Official Account</span>
               </div>
             </div>
           </div>
@@ -471,13 +485,13 @@
               Dùng Zalo hoặc máy ảnh điện thoại để quét mã kết nối với Kênh thông tin số Đoàn xã Hòa Khánh
             </p>
             <div class="qr-code-display">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://zalo.me/tuoitrehoakhanh" alt="QR Code Đoàn xã Hòa Khánh">
+              <img id="contact-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://zalo.me/tuoitrehoakhanh" alt="QR Code Đoàn xã Hòa Khánh">
             </div>
             <div style="display: flex; gap: 10px;">
-              <a href="https://facebook.com" target="_blank" class="btn btn-sm btn-secondary">
+              <a id="contact-fanpage-btn" href="https://facebook.com/tuoitrehoakhanh.tayninh" target="_blank" class="btn btn-sm btn-secondary">
                 🔵 Fanpage Facebook
               </a>
-              <a href="https://zalo.me" target="_blank" class="btn btn-sm btn-primary">
+              <a id="contact-zalo-btn" href="https://zalo.me/tuoitrehoakhanh" target="_blank" class="btn btn-sm btn-primary">
                 💬 Kênh Zalo OA
               </a>
             </div>
@@ -497,9 +511,14 @@
             <h3 style="font-size: 1.25rem; margin-bottom: 8px; color: #fff;">
               ĐOÀN TNCS HỒ CHÍ MINH XÃ HÒA KHÁNH
             </h3>
-            <p style="max-width: 450px; font-size: 0.88rem; line-height: 1.7; color: var(--text-muted);">
-              Tuổi trẻ xã Hòa Khánh bản lĩnh, khát vọng, tiên phong hành động vì quê hương giàu đẹp, văn minh và hiện đại.
+            <p id="footer-slogan" style="max-width: 450px; font-size: 0.88rem; line-height: 1.7; color: var(--text-muted);">
+              Khát vọng - Tiên phong - Bản lĩnh - Đoàn kết - Sáng tạo
             </p>
+            <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 8px; line-height: 1.6;">
+              <div>📍 <strong>Trụ sở:</strong> <span id="footer-address">Quốc lộ N2, ấp Thuận Hòa 2, xã Hòa Khánh, tỉnh Tây Ninh</span></div>
+              <div>📞 <strong>Điện thoại:</strong> <span id="footer-phone">0947463036</span></div>
+              <div>✉️ <strong>Email:</strong> <span id="footer-email">doanxahoakhanh.tayninh@gmail.com</span></div>
+            </div>
           </div>
         </div>
         <div>
@@ -732,6 +751,107 @@
     </div>
   </div>
 
+  <!-- MODAL 3: ĐĂNG NHẬP & ĐĂNG KÝ TÀI KHOẢN (ĐOÀN VIÊN & QUẢN TRỊ ADMIN) -->
+  <div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="modal-box" style="max-width: 440px; padding: 26px; background: #030e20; border: 1px solid rgba(56,189,248,0.35); border-radius: 16px; box-shadow: 0 16px 50px rgba(0,0,0,0.85);">
+      <button class="modal-close-btn" id="close-auth-modal" aria-label="Đóng">✕</button>
+
+      <div style="text-align: center; margin-bottom: 18px;">
+        <img src="assets/images/logo.png" alt="Huy hiệu Đoàn" style="width: 52px; height: 56px; object-fit: contain; margin-bottom: 6px;">
+        <h3 id="auth-modal-title" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0;">CỔNG DỊCH VỤ ĐOÀN VIÊN</h3>
+        <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 3px;">Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh - Tỉnh Tây Ninh</p>
+      </div>
+
+      <!-- TAB CHUYỂN ĐỔI: ĐOÀN VIÊN / ADMIN -->
+      <div style="display: flex; gap: 6px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; margin-bottom: 16px;">
+        <button type="button" class="auth-tab-btn active" id="tab-auth-member" style="flex: 1; padding: 8px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: var(--union-blue); color: #fff;">
+          👤 Đoàn Viên
+        </button>
+        <button type="button" class="auth-tab-btn" id="tab-auth-admin" style="flex: 1; padding: 8px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: #94a3b8;">
+          ⚙️ Quản Trị Viên (Admin)
+        </button>
+      </div>
+
+      <!-- FORM 1: ĐOÀN VIÊN (ĐĂNG NHẬP HOẶC ĐĂNG KÝ) -->
+      <div id="auth-member-panel">
+        <!-- Form Đăng nhập Đoàn viên -->
+        <form id="form-member-login">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Số điện thoại / Tên đăng nhập *</label>
+            <input type="text" id="member-login-username" class="form-input" placeholder="Ví dụ: 0947463036" required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Mật khẩu *</label>
+            <input type="password" id="member-login-password" class="form-input" placeholder="Nhập mật khẩu..." required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-weight: 700; font-size: 0.9rem;">
+            Đăng Nhập Đoàn Viên
+          </button>
+          <div style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: #94a3b8;">
+            Chưa có tài khoản? <a href="#" id="link-show-register" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">Đăng ký tài khoản mới</a>
+          </div>
+        </form>
+
+        <!-- Form Đăng ký Đoàn viên (Mặc định ẩn) -->
+        <form id="form-member-register" style="display: none;">
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Họ và tên Đoàn viên *</label>
+            <input type="text" id="reg-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn An" required style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Số điện thoại (dùng đăng nhập) *</label>
+            <input type="tel" id="reg-phone" class="form-input" placeholder="Ví dụ: 0947463036" required style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Chi đoàn / Ấp trực thuộc *</label>
+            <select id="reg-hamlet" class="form-select" style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
+              <option value="Ấp Thuận Hòa 1">Ấp Thuận Hòa 1</option>
+              <option value="Ấp Thuận Hòa 2">Ấp Thuận Hòa 2</option>
+              <option value="Ấp Bình Lợi">Ấp Bình Lợi</option>
+              <option value="Ấp Bình Thủy">Ấp Bình Thủy</option>
+              <option value="Ấp Giồng Ngang">Ấp Giồng Ngang</option>
+              <option value="Ấp Hóc Thơm">Ấp Hóc Thơm</option>
+              <option value="Ấp Lập Thành">Ấp Lập Thành</option>
+              <option value="Ấp Tân Bình">Ấp Tân Bình</option>
+              <option value="Ấp Xuân Khánh">Ấp Xuân Khánh</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Mật khẩu khởi tạo *</label>
+            <input type="password" id="reg-password" class="form-input" placeholder="Tối thiểu 6 ký tự..." required style="width: 100%; padding: 9px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.85rem;">
+          </div>
+          <button type="submit" class="btn btn-success" style="width: 100%; padding: 11px; font-weight: 700; font-size: 0.9rem;">
+            Tạo Tài Khoản Đoàn Viên
+          </button>
+          <div style="text-align: center; margin-top: 12px; font-size: 0.8rem; color: #94a3b8;">
+            Đã có tài khoản? <a href="#" id="link-show-login" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">Đăng nhập ngay</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- FORM 2: QUẢN TRỊ VIÊN ADMIN -->
+      <div id="auth-admin-panel" style="display: none;">
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 0.76rem; color: #fca5a5;">
+          🔒 Khu vực bảo mật dành riêng cho Ban Thường vụ & Cán bộ Quản trị Đoàn xã.
+        </div>
+        <form id="form-admin-login">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Tài khoản Quản trị (Admin) *</label>
+            <input type="text" id="admin-login-username" class="form-input" value="admin" required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 4px; display: block;">Mật khẩu Quản trị *</label>
+            <input type="password" id="admin-login-password" class="form-input" placeholder="Mặc định: admin123" required style="width: 100%; padding: 10px 12px; background: #071529; border: 1px solid rgba(56,189,248,0.3); color: #fff; border-radius: 8px; font-size: 0.88rem;">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-weight: 700; font-size: 0.9rem; background: linear-gradient(135deg, #da251d 0%, #b91c1c 100%);">
+            Đăng Nhập Bảng Điều Khiển CMS
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast-container" class="toast-container"></div>
 
@@ -739,8 +859,8 @@
   <script src="js/lib/face-api.min.js"></script>
   <script src="js/lib/qrcode.min.js"></script>
   <script src="js/lib/jsqr.min.js"></script>
-  <script src="js/data.js?v=20261011_6"></script>
-  <script src="js/face-checkin.js?v=20261011_6"></script>
-  <script src="js/app.js?v=20261011_6"></script>
+  <script src="js/data.js?v=20261011_7"></script>
+  <script src="js/face-checkin.js?v=20261011_7"></script>
+  <script src="js/app.js?v=20261011_7"></script>
 </body>
 </html>

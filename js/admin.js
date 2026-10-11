@@ -53,6 +53,9 @@ window.switchAdminTab = function(tabId) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAdminGateAuth();
+  const isAuth = checkAdminAuth();
+
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tabId = btn.getAttribute('data-tab');
@@ -60,18 +63,92 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.getElementById('btn-sync-refresh').addEventListener('click', () => {
-    loadAllData();
-    showToast('Đang tải và đồng bộ lại dữ liệu...', 'success');
-  });
+  const btnSync = document.getElementById('btn-sync-refresh');
+  if (btnSync) {
+    btnSync.addEventListener('click', () => {
+      loadAllData();
+      showToast('Đang tải và đồng bộ lại dữ liệu...', 'success');
+    });
+  }
 
-  loadAllData();
+  if (isAuth) {
+    loadAllData();
+  }
 
   initOrgForm();
   initYouthEditForm();
   initVolunteerActions();
   initAttendanceActions();
 });
+
+function checkAdminAuth() {
+  const gate = document.getElementById('admin-auth-gate');
+  const token = localStorage.getItem('hoakhanh_admin_token');
+  const userJson = localStorage.getItem('hoakhanh_admin_user');
+
+  if (token && userJson) {
+    try {
+      const user = JSON.parse(userJson);
+      if (user.role === 'admin') {
+        if (gate) gate.style.display = 'none';
+        const nameEl = document.getElementById('sidebar-admin-name');
+        if (nameEl) nameEl.textContent = user.fullName || user.username;
+        return true;
+      }
+    } catch (e) {}
+  }
+
+  // Nếu chưa đăng nhập: Hiển thị Auth Gate bảo vệ nghiêm ngặt
+  if (gate) gate.style.display = 'flex';
+  return false;
+}
+
+function initAdminGateAuth() {
+  const formGate = document.getElementById('form-gate-admin-login');
+  if (formGate) {
+    formGate.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('gate-admin-username').value.trim();
+      const password = document.getElementById('gate-admin-password').value.trim();
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        }).then(r => r.json());
+
+        if (res.success && res.user.role === 'admin') {
+          localStorage.setItem('hoakhanh_admin_token', res.token);
+          localStorage.setItem('hoakhanh_admin_user', JSON.stringify(res.user));
+          const gate = document.getElementById('admin-auth-gate');
+          if (gate) gate.style.display = 'none';
+          const nameEl = document.getElementById('sidebar-admin-name');
+          if (nameEl) nameEl.textContent = res.user.fullName || res.user.username;
+          showToast(`Đăng nhập thành công! Chào mừng ${res.user.fullName}`, 'success');
+          loadAllData();
+        } else {
+          showToast(res.message || 'Tài khoản không có quyền quản trị hoặc sai mật khẩu!', 'warning');
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ!', 'warning');
+      }
+    });
+  }
+
+  const btnLogout = document.getElementById('btn-admin-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      if (confirm('Đồng chí có chắc chắn muốn đăng xuất khỏi Bảng điều khiển Quản trị?')) {
+        localStorage.removeItem('hoakhanh_admin_token');
+        localStorage.removeItem('hoakhanh_admin_user');
+        const gate = document.getElementById('admin-auth-gate');
+        if (gate) gate.style.display = 'flex';
+        showToast('Đã đăng xuất tài khoản quản trị!', 'info');
+      }
+    });
+  }
+}
 
 async function loadAllData() {
   try {

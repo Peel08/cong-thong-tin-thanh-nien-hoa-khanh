@@ -97,6 +97,112 @@ const server = http.createServer(async (req, res) => {
   // 1. CÁC API ENDPOINTS LƯU TRỮ VĨNH VIỄN
   // ==========================================
 
+  // --- API 0: XÁC THỰC TÀI KHOẢN & ĐĂNG NHẬP / ĐĂNG KÝ (/api/auth) ---
+  if (pathname === '/api/auth/login' && method === 'POST') {
+    try {
+      const body = await getRequestBody(req);
+      const username = (body.username || '').trim().toLowerCase();
+      const password = (body.password || '').trim();
+
+      const users = readJson('users.json', []);
+      const user = users.find(u => u.username.toLowerCase() === username && u.password === password);
+
+      if (!user) {
+        res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, message: 'Tên đăng nhập hoặc mật khẩu không chính xác!' }));
+        return;
+      }
+
+      const token = 'SEC-' + Buffer.from(user.username + ':' + Date.now() + ':' + user.role).toString('base64');
+      const safeUser = {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+        hamlet: user.hamlet,
+        phone: user.phone
+      };
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: true, token, user: safeUser, message: 'Đăng nhập thành công!' }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, message: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/auth/register' && method === 'POST') {
+    try {
+      const body = await getRequestBody(req);
+      const username = (body.username || '').trim().toLowerCase();
+      const password = (body.password || '').trim();
+      const fullName = (body.fullName || '').trim();
+      const hamlet = body.hamlet || 'Ấp Thuận Hòa 1';
+      const phone = (body.phone || body.username || '').trim();
+
+      if (!username || !password || !fullName) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, message: 'Vui lòng điền đầy đủ họ tên, tên đăng nhập và mật khẩu!' }));
+        return;
+      }
+
+      const users = readJson('users.json', []);
+      if (users.some(u => u.username.toLowerCase() === username)) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, message: 'Tên đăng nhập / Số điện thoại này đã được đăng ký!' }));
+        return;
+      }
+
+      const newUser = {
+        id: 'USR-' + Date.now(),
+        username: username,
+        password: password,
+        fullName: fullName,
+        role: 'member',
+        hamlet: hamlet,
+        phone: phone,
+        createdAt: new Date().toLocaleString('vi-VN')
+      };
+
+      users.push(newUser);
+      writeJson('users.json', users);
+
+      const token = 'SEC-' + Buffer.from(newUser.username + ':' + Date.now() + ':member').toString('base64');
+      const safeUser = {
+        id: newUser.id,
+        username: newUser.username,
+        fullName: newUser.fullName,
+        role: 'member',
+        hamlet: newUser.hamlet,
+        phone: newUser.phone
+      };
+
+      res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: true, token, user: safeUser, message: 'Đăng ký tài khoản Đoàn viên thành công!' }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, message: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/auth/users' && method === 'GET') {
+    const users = readJson('users.json', []);
+    const safeUsers = users.map(u => ({
+      id: u.id,
+      username: u.username,
+      fullName: u.fullName,
+      role: u.role,
+      hamlet: u.hamlet,
+      phone: u.phone,
+      createdAt: u.createdAt
+    }));
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(safeUsers));
+    return;
+  }
+
   // --- API 1: TOÀN BỘ CẤU HÌNH & DỮ LIỆU ĐOÀN XÃ (/api/data) ---
   if (pathname === '/api/data') {
     if (method === 'GET') {
