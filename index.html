@@ -556,6 +556,7 @@
         <div class="scanner-viewport-wrapper">
           <div class="camera-container">
             <video id="checkin-video" autoplay playsinline muted></video>
+            <canvas id="checkin-hud-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6;"></canvas>
 
             <div class="hud-overlay">
               <div class="hud-corner hud-tl"></div>
@@ -569,7 +570,7 @@
               </div>
 
               <div class="radar-sweep-line" id="radar-scan-line"></div>
-              <div class="face-reticle" id="face-reticle-box"></div>
+              <div class="face-reticle" id="face-reticle-box" style="display: none;"></div>
               <div id="qr-scan-box" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 170px; height: 170px; border: 2px dashed #38bdf8; border-radius: 16px;"></div>
             </div>
 
@@ -601,18 +602,24 @@
             </div>
           </div>
 
-          <!-- KHUNG 1: ĐỐI SOÁT KHUÔN MẶT FACEID CHÍNH XÁC 100% -->
+          <!-- KHUNG 1: ĐỐI SOÁT KHUÔN MẶT FACEID THÔNG MINH (AI BIOMETRICS) -->
           <div id="faceid-scan-tools-box" style="margin-top: 10px; background: rgba(3, 13, 29, 0.95); padding: 12px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.35);">
-            <div style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-              <span>🎯 ĐIỂM DANH FACEID SIÊU TỐC:</span>
+            <div style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+              <span>🧠 AI FACE RECOGNITION (SINH TRẮC HỌC 128D):</span>
               <button type="button" id="btn-toggle-auto-face" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; cursor: pointer; font-weight: 700;">
                 🟢 Tự Động Quét: BẬT
               </button>
             </div>
 
-            <!-- Nút Điểm Danh Nhanh Tức Thì (Chớp Mắt 0.05s) -->
+            <!-- Bảng phản hồi AI theo thời gian thực -->
+            <div id="face-ai-feedback-banner" style="font-size: 0.76rem; padding: 6px 10px; border-radius: 6px; background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.3); color: #bae6fd; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+              <span id="face-ai-feedback-text">⚡ AI đang quét tìm khuôn mặt và đối soát 128 đặc trưng...</span>
+              <span id="face-ai-model-status" style="font-size: 0.7rem; color: #10b981; font-weight: 700;">TensorFlow Sẵn sàng</span>
+            </div>
+
+            <!-- Nút Điểm Danh Nhanh Tức Thì -->
             <button type="button" class="btn btn-primary" id="btn-quick-checkin-instant" style="width: 100%; padding: 9px 12px; font-size: 0.88rem; font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #10b981 100%); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); margin-bottom: 8px; border-radius: 7px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <span>⚡ ĐIỂM DANH TỨC THÌ (CHỚP MẮT)</span>
+              <span>⚡ XÁC THỰC KHUÔN MẶT NGAY (CHỚP MẮT)</span>
             </button>
             
             <!-- Đối soát theo đúng đại biểu chỉ định -->
@@ -625,13 +632,13 @@
               </button>
             </div>
 
-            <!-- Quét người thực tế trước camera hoặc lưu mẫu khuôn mặt người dùng -->
+            <!-- Đăng ký khuôn mặt người đang ngồi trước camera -->
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <button type="button" class="btn btn-sm btn-outline" id="btn-scan-live-camera" style="flex: 1; border-color: #38bdf8; color: #38bdf8; font-size: 0.78rem;">
-                📷 Quét Người Trước Camera
+              <button type="button" class="btn btn-sm btn-outline" id="btn-enroll-live-face" style="flex: 1; border-color: #10b981; color: #10b981; font-size: 0.78rem; font-weight: 700;" title="Chụp và trích xuất vector 128 chiều khuôn mặt của người đang ngồi trước webcam và lưu vào hồ sơ đại biểu">
+                📸 Đăng Ký Mặt Này Cho Đại Biểu
               </button>
-              <button type="button" class="btn btn-sm btn-outline" id="btn-enroll-live-face" style="flex: 1; border-color: #10b981; color: #10b981; font-size: 0.78rem;" title="Chụp ảnh người đang ngồi trước webcam và lưu vào hồ sơ đại biểu được chọn">
-                📸 Lưu Mặt Tôi Cho Đại Biểu
+              <button type="button" class="btn btn-sm btn-outline" id="btn-scan-live-camera" style="flex: 1; border-color: #38bdf8; color: #38bdf8; font-size: 0.78rem;">
+                📷 Đối Soát Lại Camera
               </button>
             </div>
           </div>
@@ -729,6 +736,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- JavaScript Modules -->
+  <script src="js/lib/face-api.min.js"></script>
   <script src="js/lib/qrcode.min.js"></script>
   <script src="js/lib/jsqr.min.js"></script>
   <script src="js/data.js"></script>

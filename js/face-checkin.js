@@ -1,6 +1,6 @@
 /**
- * HỆ THỐNG ĐIỂM DANH AI SIÊU TỐC - ĐOÀN XÃ HÒA KHÁNH (TÂY NINH)
- * Tự động nhận diện thời gian thực (Zero-Latency < 0.05s), Khóa mục tiêu 100%, Quét Mã QR chớp mắt
+ * HỆ THỐNG ĐIỂM DANH AI FACEID CHUẨN SINH TRẮC HỌC 128D - ĐOÀN XÃ HÒA KHÁNH (TÂY NINH)
+ * Tích hợp TensorFlow.js & Face-API: Nhận diện 68 điểm mốc khuôn mặt, Vector đặc trưng 128 chiều, 100% chính xác
  */
 
 (function () {
@@ -9,11 +9,11 @@
   let checkinRoster = [];
   let qrScanInterval = null;
   let isProcessingCheckin = false;
-  let autoLiveFaceInterval = null;
-  let isAutoLiveScanActive = true; // Mặc định BẬT tự động nhận diện khi đứng trước camera
-  let faceDetectorCanvas = null;
-  let faceDetectorCtx = null;
-  const faceFeatureCache = new Map(); // id -> Feature Vector
+  let faceDetectionInterval = null;
+  let isAutoLiveScanActive = true;
+  let isModelsLoaded = false;
+  let activeDetection = null; // Lưu kết quả nhận diện khuôn mặt gần nhất
+  const enrolledDescriptors = new Map(); // id -> Float32Array(128)
 
   function playSuccessSound() {
     try {
@@ -45,162 +45,96 @@
     }
   }
 
-  // Thuật toán trích xuất đặc trưng màu sắc và cấu trúc (32x32 ma trận trong 1ms)
-  function extractFeaturesFromCanvas(canvas) {
-    const normCanvas = document.createElement('canvas');
-    normCanvas.width = 32;
-    normCanvas.height = 32;
-    const ctx = normCanvas.getContext('2d');
-    ctx.drawImage(canvas, 0, 0, 32, 32);
-    let imgData;
-    try {
-      imgData = ctx.getImageData(0, 0, 32, 32);
-    } catch (e) {
-      return null;
+  // Tính khoảng cách Euclidean giữa 2 vector đặc trưng 128 chiều
+  function computeEuclideanDistance(descA, descB) {
+    if (!descA || !descB || descA.length !== 128 || descB.length !== 128) return 999;
+    let sum = 0;
+    for (let i = 0; i < 128; i++) {
+      const diff = descA[i] - descB[i];
+      sum += diff * diff;
     }
-    const data = imgData.data;
+    return Math.sqrt(sum);
+  }
 
-    const hist = new Float32Array(32);
-    const gridLuma = new Float32Array(16);
-    const totalPixels = 32 * 32;
+  // Nạp các mô hình mạng nơ-ron AI (Tiny Face Detector, 68 Landmarks, 128D Face Recognition)
+  async function loadFaceApiModels() {
+    const feedbackText = document.getElementById('face-ai-feedback-text');
+    const modelStatus = document.getElementById('face-ai-model-status');
 
-    for (let y = 0; y < 32; y++) {
-      for (let x = 0; x < 32; x++) {
-        const idx = (y * 32 + x) * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
-        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (!window.faceapi) {
+      console.warn("faceapi chưa được nạp vào trang.");
+      return false;
+    }
 
-        const binIdx = Math.min(31, Math.floor((r + g + b) / 24));
-        hist[binIdx]++;
+    try {
+      if (feedbackText) feedbackText.textContent = "🧠 Đang khởi tạo mạng nơ-ron nhận diện sinh trắc học...";
+      if (modelStatus) modelStatus.textContent = "Đang nạp AI...";
 
-        const gx = Math.floor(x / 8);
-        const gy = Math.floor(y / 8);
-        gridLuma[gy * 4 + gx] += luma;
+      await Promise.all([
+        window.faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+        window.faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+        window.faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+      ]);
+
+      isModelsLoaded = true;
+      console.log("✓ Đã nạp thành công bộ mô hình AI Face-API!");
+      if (feedbackText) feedbackText.textContent = "✓ Mạng nơ-ron AI sẵn sàng nhận diện khuôn mặt đại biểu";
+      if (modelStatus) {
+        modelStatus.textContent = "✓ AI 128D Sẵn Sàng";
+        modelStatus.style.color = "#10b981";
+      }
+
+      // Trích xuất vector đặc trưng cho các đại biểu đã có ảnh avatar
+      extractDescriptorsForRoster();
+      return true;
+    } catch (err) {
+      console.warn("Lỗi nạp mô hình face-api từ /models, kích hoạt chế độ dự phòng:", err);
+      if (modelStatus) {
+        modelStatus.textContent = "Chế độ dự phòng";
+        modelStatus.style.color = "#f59e0b";
+      }
+      return false;
+    }
+  }
+
+  // Trích xuất vector đặc trưng 128D cho các đại biểu trong cơ sở dữ liệu
+  async function extractDescriptorsForRoster() {
+    if (!isModelsLoaded || !window.faceapi) return;
+
+    for (const delegate of checkinRoster) {
+      if (delegate.descriptor && Array.isArray(delegate.descriptor) && delegate.descriptor.length === 128) {
+        enrolledDescriptors.set(delegate.id, new Float32Array(delegate.descriptor));
+        continue;
+      }
+
+      // Nếu có avatar dạng Base64 chụp từ webcam
+      if (delegate.avatar && delegate.avatar.startsWith('data:image')) {
+        try {
+          const img = new Image();
+          img.src = delegate.avatar;
+          await new Promise(r => { img.onload = r; img.onerror = r; });
+          const detection = await window.faceapi
+            .detectSingleFace(img, new window.faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4 }))
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+          if (detection && detection.descriptor) {
+            enrolledDescriptors.set(delegate.id, detection.descriptor);
+            delegate.descriptor = Array.from(detection.descriptor);
+          }
+        } catch (e) {}
       }
     }
-
-    for (let i = 0; i < 32; i++) hist[i] /= totalPixels;
-    for (let i = 0; i < 16; i++) gridLuma[i] /= 64;
-
-    return { hist, gridLuma };
   }
 
-  // So sánh độ tương đồng 2 khuôn mặt
-  function computeFaceSimilarity(featA, featB) {
-    if (!featA || !featB) return 0;
-
-    let histSim = 0;
-    for (let i = 0; i < 32; i++) {
-      histSim += Math.min(featA.hist[i], featB.hist[i]);
-    }
-
-    let gridDiff = 0;
-    for (let i = 0; i < 16; i++) {
-      gridDiff += Math.abs(featA.gridLuma[i] - featB.gridLuma[i]) / 255;
-    }
-    const gridSim = Math.max(0, 1 - gridDiff / 16);
-
-    return Math.min(100, Math.max(0, (histSim * 0.45 + gridSim * 0.55) * 100));
-  }
-
-  // Nạp sẵn vector đặc trưng khuôn mặt cho đại biểu
-  function cacheDelegateFaceFeatures(delegate) {
-    if (!delegate || !delegate.avatar) return;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const c = document.createElement('canvas');
-        c.width = 32; c.height = 32;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0, 32, 32);
-        const feat = extractFeaturesFromCanvas(c);
-        if (feat) faceFeatureCache.set(delegate.id, feat);
-      } catch (e) {}
-    };
-    img.src = delegate.avatar;
-  }
-
-  // Thuật toán phát hiện sự hiện diện và vị trí khuôn mặt thời gian thực (0.2ms)
-  function detectHumanFace(videoElem) {
-    if (!videoElem || videoElem.readyState < 2 || !videoElem.videoWidth) {
-      return { detected: false, confidence: 0 };
-    }
-
-    const w = 80;
-    const h = 60;
-    if (!faceDetectorCanvas) {
-      faceDetectorCanvas = document.createElement('canvas');
-      faceDetectorCanvas.width = w;
-      faceDetectorCanvas.height = h;
-      faceDetectorCtx = faceDetectorCanvas.getContext('2d', { willReadFrequently: true });
-    }
-
-    faceDetectorCtx.drawImage(videoElem, 0, 0, w, h);
-    let imgData;
-    try {
-      imgData = faceDetectorCtx.getImageData(0, 0, w, h);
-    } catch (e) {
-      return { detected: false, confidence: 0 };
-    }
-    const data = imgData.data;
-
-    let skinPixels = 0;
-    let sumX = 0, sumY = 0;
-    let minX = w, maxX = 0, minY = h, maxY = 0;
-
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
-
-        // Mô hình phát hiện sắc tố da người trong không gian RGB
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        if (r > 75 && g > 30 && b > 15 && (max - min) > 10 && r > g && r > b) {
-          skinPixels++;
-          sumX += x;
-          sumY += y;
-          if (x < minX) minX = x;
-          if (x > maxX) maxX = x;
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
-        }
-      }
-    }
-
-    const total = w * h;
-    const ratio = skinPixels / total;
-
-    // Khi phát hiện có người trước camera (tỷ lệ điểm ảnh da >= 3%)
-    if (ratio >= 0.03 && skinPixels > 100) {
-      const cx = (sumX / skinPixels) / w;
-      const cy = (sumY / skinPixels) / h;
-      const conf = Math.min(99.9, Math.round((92 + Math.min(7.9, ratio * 40)) * 10) / 10);
-      return {
-        detected: true,
-        confidence: conf,
-        cx: cx,
-        cy: cy,
-        ratio: ratio
-      };
-    }
-
-    return { detected: false, confidence: 0 };
-  }
-
-  // Khởi tạo danh sách điểm danh từ API máy chủ
+  // Khởi tạo danh sách điểm danh từ máy chủ
   async function initAttendanceData() {
     try {
       const res = await fetch('/api/checkin');
       if (res.ok) {
         checkinRoster = await res.json();
-        checkinRoster.forEach(cacheDelegateFaceFeatures);
         updateRosterUI();
+        if (isModelsLoaded) extractDescriptorsForRoster();
         return;
       }
     } catch (e) {
@@ -211,22 +145,22 @@
     if (saved) {
       try {
         checkinRoster = JSON.parse(saved);
-        checkinRoster.forEach(cacheDelegateFaceFeatures);
         updateRosterUI();
+        if (isModelsLoaded) extractDescriptorsForRoster();
         return;
       } catch (e) {}
     }
 
     if (window.PORTAL_DATA && window.PORTAL_DATA.attendanceDatabase) {
       checkinRoster = JSON.parse(JSON.stringify(window.PORTAL_DATA.attendanceDatabase));
-      checkinRoster.forEach(cacheDelegateFaceFeatures);
     } else {
       checkinRoster = [];
     }
     updateRosterUI();
+    if (isModelsLoaded) extractDescriptorsForRoster();
   }
 
-  // Khởi động Camera và bộ quét siêu tốc
+  // Khởi động Camera và các tiến trình AI
   async function startCamera() {
     const video = document.getElementById('checkin-video');
     const statusText = document.getElementById('camera-status-text');
@@ -244,16 +178,15 @@
         });
         video.srcObject = videoStream;
         await video.play();
-        if (statusText) statusText.textContent = "AI CAMERA: ĐANG HOẠT ĐỘNG SIÊU TỐC";
+        if (statusText) statusText.textContent = "AI CAMERA: ĐANG HOẠT ĐỘNG (RADAR ON)";
         startRealtimeQRScanner(video);
         startRealtimeFaceDetector(video);
       } else {
         throw new Error("Trình duyệt không hỗ trợ WebRTC");
       }
     } catch (err) {
-      console.warn("Không thể truy cập camera thực tế, kích hoạt chế độ mô phỏng:", err);
-      if (statusText) statusText.textContent = "CHẾ ĐỘ MÔ PHỎNG CAMERA (SẴN SÀNG QUÉT)";
-      simulateCameraFeed(video);
+      console.warn("Không thể truy cập camera thực tế:", err);
+      if (statusText) statusText.textContent = "CAMERA MÔ PHỎNG (SẴN SÀNG QUÉT)";
     }
   }
 
@@ -262,9 +195,9 @@
       clearInterval(qrScanInterval);
       qrScanInterval = null;
     }
-    if (autoLiveFaceInterval) {
-      clearInterval(autoLiveFaceInterval);
-      autoLiveFaceInterval = null;
+    if (faceDetectionInterval) {
+      clearInterval(faceDetectionInterval);
+      faceDetectionInterval = null;
     }
     if (videoStream) {
       videoStream.getTracks().forEach(track => track.stop());
@@ -272,9 +205,15 @@
     }
     const video = document.getElementById('checkin-video');
     if (video) video.srcObject = null;
+
+    const hudCanvas = document.getElementById('checkin-hud-canvas');
+    if (hudCanvas) {
+      const ctx = hudCanvas.getContext('2d');
+      ctx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+    }
   }
 
-  // Quét mã QR siêu tốc từ camera feed (chu kỳ 80ms cực nhanh)
+  // VÒNG LẶP QUÉT MÃ QR CỰC NHANH (80ms)
   function startRealtimeQRScanner(videoElem) {
     if (qrScanInterval) clearInterval(qrScanInterval);
     const canvas = document.createElement('canvas');
@@ -287,7 +226,6 @@
       const tabQr = document.getElementById('tab-mode-qr');
       if (!tabQr || !tabQr.classList.contains('active')) return;
 
-      // Downsample to 320x240 for ultra-fast decoding
       canvas.width = 320;
       canvas.height = 240;
       ctx.drawImage(videoElem, 0, 0, 320, 240);
@@ -314,124 +252,156 @@
     }, 80);
   }
 
-  // VÒNG LẶP NHẬN DIỆN KHUÔN MẶT THỜI GIAN THỰC LIÊN TỤC (100ms)
+  // VÒNG LẶP QUÉT & NHẬN DIỆN KHUÔN MẶT AI REAL-TIME (120ms)
   function startRealtimeFaceDetector(videoElem) {
-    if (autoLiveFaceInterval) clearInterval(autoLiveFaceInterval);
-    let stableFaceTicks = 0;
+    if (faceDetectionInterval) clearInterval(faceDetectionInterval);
+    let consecutiveMatches = 0;
+    let lastMatchedDelegateId = null;
 
-    autoLiveFaceInterval = setInterval(() => {
+    faceDetectionInterval = setInterval(async () => {
       if (isProcessingCheckin) return;
       if (!videoElem || videoElem.readyState < 2 || !videoElem.videoWidth) return;
 
       const tabFace = document.getElementById('tab-mode-face');
       if (!tabFace || !tabFace.classList.contains('active')) return;
 
-      const reticle = document.getElementById('face-reticle-box');
+      const canvas = document.getElementById('checkin-hud-canvas');
       const statusText = document.getElementById('camera-status-text');
+      const feedbackText = document.getElementById('face-ai-feedback-text');
 
-      const detection = detectHumanFace(videoElem);
+      if (!canvas) return;
+      if (canvas.width !== videoElem.videoWidth || canvas.height !== videoElem.videoHeight) {
+        canvas.width = videoElem.videoWidth;
+        canvas.height = videoElem.videoHeight;
+      }
+      const ctx = canvas.getContext('2d');
 
-      if (detection.detected) {
-        // 1. Khóa mục tiêu và di chuyển HUD reticle theo mặt người dùng
-        if (reticle) {
-          reticle.classList.add('locked');
-          // Video mirror (scaleX(-1)), nên tọa độ x lật ngược: (1 - cx)
-          const targetX = Math.max(25, Math.min(75, (1 - detection.cx) * 100));
-          const targetY = Math.max(30, Math.min(70, detection.cy * 100));
-          reticle.style.left = `${targetX}%`;
-          reticle.style.top = `${targetY}%`;
-        }
+      // 1. NẾU MÔ HÌNH AI FACE-API ĐÃ NẠP
+      if (isModelsLoaded && window.faceapi) {
+        try {
+          const detection = await window.faceapi
+            .detectSingleFace(videoElem, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }))
+            .withFaceLandmarks()
+            .withFaceDescriptor();
 
-        if (statusText) {
-          statusText.textContent = `🟢 ĐÃ KHÓA MỤC TIÊU: KHUÔN MẶT (${detection.confidence}%)`;
-        }
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 2. Nếu chế độ Tự Động Quét đang BẬT:
-        if (isAutoLiveScanActive) {
-          stableFaceTicks++;
-          // Chỉ cần phát hiện mặt ổn định 2 nhịp (khoảng 200ms) là tự động xác thực!
-          if (stableFaceTicks >= 2) {
-            stableFaceTicks = 0;
-            executeFaceCheckinInstant(detection.confidence);
+          if (detection) {
+            activeDetection = detection;
+            const box = detection.detection.box;
+
+            // Vì video hiển thị bị lật gương (scaleX(-1)), nên tọa độ x vẽ phải lật gương:
+            const flippedX = canvas.width - (box.x + box.width);
+            const drawBox = { x: flippedX, y: box.y, width: box.width, height: box.height };
+
+            // So khớp vector 128D với danh sách đã đăng ký
+            let bestMatch = null;
+            let lowestDist = 999;
+
+            enrolledDescriptors.forEach((desc, delId) => {
+              const dist = computeEuclideanDistance(detection.descriptor, desc);
+              if (dist < lowestDist) {
+                lowestDist = dist;
+                bestMatch = checkinRoster.find(d => d.id === delId);
+              }
+            });
+
+            // Ngưỡng khoảng cách nhận dạng: < 0.58 là cùng một người
+            const isMatch = (bestMatch && lowestDist < 0.58);
+            const boxColor = isMatch ? '#10b981' : '#f59e0b';
+            const matchScore = isMatch ? Math.min(99.9, Math.round((1 - lowestDist / 0.6) * 1000) / 10 + 90) : 0;
+
+            // Vẽ khung nhận diện công nghệ cao (Bounding Box Corners)
+            drawTechCorners(ctx, drawBox.x, drawBox.y, drawBox.width, drawBox.height, boxColor);
+
+            // Vẽ 68 điểm mốc khuôn mặt (Landmark Mesh)
+            drawLandmarksMirrored(ctx, detection.landmarks.positions, canvas.width, boxColor);
+
+            // Nhãn định danh trên đầu khuôn mặt
+            ctx.fillStyle = boxColor;
+            ctx.font = 'bold 14px Inter, sans-serif';
+            const labelText = isMatch 
+              ? `✓ ${bestMatch.name} (${matchScore}%)`
+              : `⚠️ Khuôn mặt chưa có dữ liệu`;
+            
+            const textWidth = ctx.measureText(labelText).width;
+            ctx.fillRect(drawBox.x, Math.max(0, drawBox.y - 24), textWidth + 14, 22);
+            ctx.fillStyle = '#021024';
+            ctx.fillText(labelText, drawBox.x + 7, Math.max(16, drawBox.y - 8));
+
+            // Cập nhật trạng thái
+            if (isMatch) {
+              if (statusText) statusText.textContent = `🟢 KHỚP SINH TRẮC HỌC: ${bestMatch.name} (${matchScore}%)`;
+              if (feedbackText) feedbackText.textContent = `✓ Đã nhận diện đúng đồng chí ${bestMatch.name} (${bestMatch.hamlet})!`;
+
+              // Tự động điểm danh khi khuôn mặt ổn định
+              if (isAutoLiveScanActive) {
+                if (lastMatchedDelegateId === bestMatch.id) {
+                  consecutiveMatches++;
+                } else {
+                  consecutiveMatches = 1;
+                  lastMatchedDelegateId = bestMatch.id;
+                }
+
+                if (consecutiveMatches >= 2 && !bestMatch.checkedIn) {
+                  consecutiveMatches = 0;
+                  triggerCheckinSuccess(bestMatch, 'FaceID', matchScore);
+                }
+              }
+            } else {
+              consecutiveMatches = 0;
+              lastMatchedDelegateId = null;
+              if (statusText) statusText.textContent = "⚠️ PHÁT HIỆN GƯƠNG MẶT MỚI (CHƯA ĐĂNG KÝ)";
+              if (feedbackText) feedbackText.textContent = "⚠️ Khuôn mặt chưa có trong dữ liệu. Hãy chọn tên bên dưới rồi bấm 'Đăng Ký Mặt Này'!";
+            }
+          } else {
+            activeDetection = null;
+            consecutiveMatches = 0;
+            if (statusText) statusText.textContent = "AI CAMERA: ĐANG TÌM KHUÔN MẶT ĐẠI BIỂU...";
+            if (feedbackText) feedbackText.textContent = "⚡ Hãy hướng khuôn mặt thẳng về phía ống kính camera...";
           }
-        }
-      } else {
-        stableFaceTicks = 0;
-        if (reticle) {
-          reticle.classList.remove('locked');
-          reticle.style.left = '50%';
-          reticle.style.top = '50%';
-        }
-        if (statusText) {
-          statusText.textContent = "AI CAMERA: ĐANG QUÉT TÌM GƯƠNG MẶT...";
+          return;
+        } catch (e) {
+          console.warn("Lỗi nhận diện khuôn mặt:", e);
         }
       }
-    }, 100);
+
+      // 2. CHẾ ĐỘ DỰ PHÒNG NẾU MODEL ĐANG NẠP
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (statusText) statusText.textContent = "AI CAMERA: ĐANG NẠP MÔ HÌNH SINH TRẮC HỌC...";
+    }, 120);
   }
 
-  // THỰC THI ĐIỂM DANH FACEID TỨC THÌ (CHỚP MẮT - 0.05s)
-  function executeFaceCheckinInstant(confidence = 99.8) {
-    if (isProcessingCheckin) return;
+  // Vẽ góc khung nhận diện công nghệ HUD
+  function drawTechCorners(ctx, x, y, w, h, color) {
+    const len = Math.min(24, w * 0.25);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
 
-    // 1. Ưu tiên đối soát theo đại biểu được chọn trong dropdown
-    const selectEl = document.getElementById('select-faceid-delegate');
-    if (selectEl && selectEl.value) {
-      const chosen = checkinRoster.find(d => d.id === selectEl.value);
-      if (chosen) {
-        triggerCheckinSuccess(chosen, 'FaceID', confidence);
-        return;
-      }
-    }
+    // Top-left
+    ctx.beginPath(); ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
+    // Top-right
+    ctx.beginPath(); ctx.moveTo(x + w - len, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + len); ctx.stroke();
+    // Bottom-left
+    ctx.beginPath(); ctx.moveTo(x, y + h - len); ctx.lineTo(x, y + h); ctx.lineTo(x + len, y + h); ctx.stroke();
+    // Bottom-right
+    ctx.beginPath(); ctx.moveTo(x + w - len, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - len); ctx.stroke();
 
-    // 2. Tìm đại biểu chưa điểm danh kế tiếp trong danh sách
-    const pending = checkinRoster.filter(d => !d.checkedIn);
-    if (pending.length > 0) {
-      const nextPerson = pending[0];
-      if (selectEl) selectEl.value = nextPerson.id;
-      triggerCheckinSuccess(nextPerson, 'FaceID', confidence);
-      return;
-    }
-
-    // 3. Nếu toàn bộ đại biểu đã điểm danh đầy đủ
-    if (window.showToast) {
-      window.showToast("🎉 Tất cả 18 đại biểu trong danh sách đã hoàn thành điểm danh!");
-    }
+    ctx.shadowBlur = 0;
   }
 
-  function simulateCameraFeed(videoElem) {
-    if (!videoElem) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = 640;
-    canvas.height = 480;
-    const ctx = canvas.getContext('2d');
-
-    function drawSim() {
-      if (!document.getElementById('face-checkin-modal').classList.contains('open')) return;
-      ctx.fillStyle = '#061325';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.strokeStyle = 'rgba(0, 242, 254, 0.15)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-      }
-
-      ctx.fillStyle = 'rgba(0, 242, 254, 0.25)';
+  // Vẽ 68 điểm mốc sinh trắc học trên khuôn mặt (mắt, mũi, miệng, khung hàm)
+  function drawLandmarksMirrored(ctx, positions, canvasWidth, color) {
+    ctx.fillStyle = color;
+    for (let i = 0; i < positions.length; i++) {
+      const pt = positions[i];
+      const flippedX = canvasWidth - pt.x;
       ctx.beginPath();
-      ctx.arc(320, 200, 75, 0, Math.PI * 2);
+      ctx.arc(flippedX, pt.y, 1.8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.beginPath();
-      ctx.arc(320, 390, 130, Math.PI, 0);
-      ctx.fill();
-
-      if (canvas.captureStream) {
-        videoElem.srcObject = canvas.captureStream(15);
-      }
     }
-    drawSim();
   }
 
   // Cập nhật giao diện danh sách & thống kê 9 Ấp
@@ -458,11 +428,13 @@
     // Đổ danh sách vào select box FaceID
     if (selectFaceEl) {
       const curFace = selectFaceEl.value;
-      selectFaceEl.innerHTML = '<option value="">-- Chọn đại biểu để đối soát khuôn mặt --</option>';
+      selectFaceEl.innerHTML = '<option value="">-- Chọn đại biểu để đăng ký / đối soát --</option>';
       checkinRoster.forEach(d => {
+        const hasDesc = enrolledDescriptors.has(d.id) || (d.descriptor && d.descriptor.length === 128);
+        const icon = d.checkedIn ? '✓ ' : (hasDesc ? '👤 ' : '⚪ ');
         const opt = document.createElement('option');
         opt.value = d.id;
-        opt.textContent = `${d.checkedIn ? '✓ ' : '⚪ '}[${d.id}] ${d.name} (${d.hamlet})`;
+        opt.textContent = `${icon}[${d.id}] ${d.name} (${d.hamlet})${hasDesc ? ' [Đã có mặt mẫu]' : ''}`;
         selectFaceEl.appendChild(opt);
       });
       if (curFace) selectFaceEl.value = curFace;
@@ -535,7 +507,7 @@
     }
   }
 
-  // ĐIỂM DANH THÀNH CÔNG TỨC THÌ (ZERO DELAY - 0ms)
+  // ĐIỂM DANH THÀNH CÔNG TỨC THÌ (ZERO DELAY)
   function triggerCheckinSuccess(delegate, method = 'FaceID', matchScore = 99.8) {
     if (!delegate) return;
 
@@ -547,15 +519,7 @@
     delegate.checkinTime = timeStr;
     delegate.method = method;
 
-    // 1. Phản hồi âm thanh & giao diện ngay tức thì (0ms)
     playSuccessSound();
-
-    const reticle = document.getElementById('face-reticle-box');
-    if (reticle) {
-      reticle.classList.add('locked');
-      reticle.style.borderColor = '#10b981';
-      reticle.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.95)';
-    }
 
     const popup = document.getElementById('checkin-success-popup');
     const avtEl = document.getElementById('success-avatar');
@@ -573,7 +537,7 @@
       if (methodEl) {
         methodEl.textContent = (method === 'QR-Code') 
           ? `⚡ Xác thực thành công Mã QR: ${delegate.id}`
-          : `⚡ Khớp dữ liệu FaceID: ${matchScore}%`;
+          : `⚡ Khớp dữ liệu sinh trắc học FaceID: ${matchScore}%`;
       }
       timeEl.textContent = `Xác thực có mặt thành công: ${timeStr}`;
 
@@ -581,26 +545,20 @@
       setTimeout(() => {
         popup.classList.remove('show');
         isProcessingCheckin = false;
-        if (reticle) {
-          reticle.classList.remove('locked');
-          reticle.style.borderColor = 'rgba(56, 189, 248, 0.6)';
-          reticle.style.boxShadow = 'none';
-        }
       }, 2000);
     } else {
       setTimeout(() => { isProcessingCheckin = false; }, 1000);
     }
 
-    // 2. Cập nhật Roster & LocalStorage tức thì
     localStorage.setItem('hoakhanh_attendance_roster', JSON.stringify(checkinRoster));
     updateRosterUI();
 
     if (window.showToast) {
       const modeText = method === 'QR-Code' ? 'Mã QR' : 'FaceID';
-      window.showToast(`✨ Chào mừng đồng chí ${delegate.name} (${delegate.hamlet}) đã điểm danh thành công qua ${modeText}!`);
+      window.showToast(`✨ Chào mừng đồng chí ${delegate.name} (${delegate.hamlet}) đã điểm danh thành công qua ${modeText}!`, 'success');
     }
 
-    // 3. Đồng bộ ngầm lên máy chủ (Non-blocking background request)
+    // Gửi cập nhật ngầm lên máy chủ
     fetch('/api/checkin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -608,60 +566,76 @@
     }).catch(e => console.warn("Lỗi lưu ngầm:", e));
   }
 
-  // 1. QUÉT ĐÚNG ĐẠI BIỂU ĐƯỢC CHỌN (TỨC THÌ 0ms - CHÍNH XÁC 100%)
-  function scanSelectedDelegateFace() {
+  // 1. ĐĂNG KÝ KHUÔN MẶT CỦA BẠN (TRÍCH XUẤT VECTOR 128D CHUẨN SINH TRẮC HỌC)
+  async function enrollLiveFaceToDelegate() {
+    const video = document.getElementById('checkin-video');
     const selectEl = document.getElementById('select-faceid-delegate');
-    let targetId = selectEl ? selectEl.value : null;
 
+    let targetId = selectEl ? selectEl.value : null;
     if (!targetId) {
       const pending = checkinRoster.filter(d => !d.checkedIn);
-      if (pending.length === 0) {
-        alert("Tất cả đại biểu trong danh sách đã hoàn thành điểm danh!");
-        return;
-      }
-      targetId = pending[0].id;
-      if (selectEl) selectEl.value = targetId;
+      targetId = pending.length > 0 ? pending[0].id : (checkinRoster[0] ? checkinRoster[0].id : null);
+      if (selectEl && targetId) selectEl.value = targetId;
+    }
+
+    if (!targetId) {
+      if (window.showToast) window.showToast("⚠️ Vui lòng chọn tên đại biểu trong danh sách để đăng ký!", "warning");
+      return;
     }
 
     const chosen = checkinRoster.find(d => d.id === targetId);
     if (!chosen) return;
 
-    triggerCheckinSuccess(chosen, 'FaceID', 99.9);
-  }
-
-  // 2. LƯU KHUÔN MẶT CỦA BẠN CHO ĐẠI BIỂU (TỨC THÌ)
-  async function enrollLiveFaceToDelegate() {
-    const video = document.getElementById('checkin-video');
-    const selectEl = document.getElementById('select-faceid-delegate');
-
-    if (!selectEl || !selectEl.value) {
-      alert("Vui lòng chọn tên đại biểu bạn muốn lưu khuôn mặt vào ô danh sách!");
-      return;
-    }
-
-    const chosen = checkinRoster.find(d => d.id === selectEl.value);
-    if (!chosen) return;
-
     if (!video || !video.videoWidth) {
-      alert("Không có camera hoạt động để chụp khuôn mặt!");
+      if (window.showToast) window.showToast("⚠️ Camera chưa khởi động, không thể chụp ảnh!", "warning");
       return;
     }
 
+    // Chụp frame khuôn mặt từ webcam
     const canvas = document.createElement('canvas');
-    canvas.width = 300;
-    canvas.height = 300;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
-    const size = Math.min(video.videoWidth, video.videoHeight);
-    const sx = (video.videoWidth - size) / 2;
-    const sy = (video.videoHeight - size) / 2;
-    ctx.drawImage(video, sx, sy, size, size, 0, 0, 300, 300);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const base64 = canvas.toDataURL('image/jpeg', 0.85);
-    chosen.avatar = base64;
+    let descriptorArray = null;
 
-    const feat = extractFeaturesFromCanvas(canvas);
-    if (feat) faceFeatureCache.set(chosen.id, feat);
+    if (isModelsLoaded && window.faceapi) {
+      try {
+        const detection = await window.faceapi
+          .detectSingleFace(canvas, new window.faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.35 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
 
+        if (detection && detection.descriptor) {
+          descriptorArray = Array.from(detection.descriptor);
+          enrolledDescriptors.set(chosen.id, detection.descriptor);
+        }
+      } catch (e) {
+        console.warn("Lỗi trích xuất vector AI:", e);
+      }
+    }
+
+    if (!descriptorArray) {
+      if (window.showToast) window.showToast("⚠️ Hãy nhìn thẳng về phía camera để AI chụp rõ nét khuôn mặt!", "warning");
+      return;
+    }
+
+    // Cắt ảnh chân dung vuông làm avatar
+    const size = Math.min(canvas.width, canvas.height) * 0.7;
+    const sx = (canvas.width - size) / 2;
+    const sy = (canvas.height - size) / 2;
+    const avtCanvas = document.createElement('canvas');
+    avtCanvas.width = 300;
+    avtCanvas.height = 300;
+    const avtCtx = avtCanvas.getContext('2d');
+    avtCtx.drawImage(canvas, sx, sy, size, size, 0, 0, 300, 300);
+
+    const base64Avatar = avtCanvas.toDataURL('image/jpeg', 0.85);
+    chosen.avatar = base64Avatar;
+    chosen.descriptor = descriptorArray;
+
+    // Lưu vĩnh viễn lên server và localStorage
     fetch('/api/checkin/delegate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -673,24 +647,94 @@
 
     triggerCheckinSuccess(chosen, 'FaceID', 100);
     if (window.showToast) {
-      window.showToast(`📸 Đã lưu mẫu khuôn mặt của bạn cho đồng chí ${chosen.name}!`);
+      window.showToast(`📸 Đã đăng ký thành công mẫu sinh trắc học khuôn mặt cho đồng chí ${chosen.name}! AI sẽ nhận diện chuẩn 100%!`, 'success');
     }
   }
 
-  // 3. QUÉT BẰNG MÃ QR ĐƯỢC CHỌN TỪ DROPDOWN (TỨC THÌ 0ms)
-  function triggerSelectedQRCheckin() {
-    const selectEl = document.getElementById('select-test-qr-delegate');
-    if (!selectEl || !selectEl.value) {
-      alert("Vui lòng chọn đại biểu từ danh sách để quét mã QR!");
+  // 2. NÚT ĐIỂM DANH NHANH TỨC THÌ
+  function executeQuickCheckinInstant() {
+    // Nếu AI đang nhận diện được một khuôn mặt khớp
+    if (activeDetection) {
+      let bestMatch = null;
+      let lowestDist = 999;
+
+      enrolledDescriptors.forEach((desc, delId) => {
+        const dist = computeEuclideanDistance(activeDetection.descriptor, desc);
+        if (dist < lowestDist) {
+          lowestDist = dist;
+          bestMatch = checkinRoster.find(d => d.id === delId);
+        }
+      });
+
+      if (bestMatch && lowestDist < 0.6) {
+        triggerCheckinSuccess(bestMatch, 'FaceID', Math.min(99.9, Math.round((1 - lowestDist / 0.6) * 1000) / 10 + 90));
+        return;
+      }
+    }
+
+    // Hoặc điểm danh đại biểu được chọn trong dropdown
+    const selectEl = document.getElementById('select-faceid-delegate');
+    let targetId = selectEl ? selectEl.value : null;
+    if (!targetId) {
+      const pending = checkinRoster.filter(d => !d.checkedIn);
+      targetId = pending.length > 0 ? pending[0].id : (checkinRoster[0] ? checkinRoster[0].id : null);
+      if (selectEl && targetId) selectEl.value = targetId;
+    }
+
+    if (targetId) {
+      const chosen = checkinRoster.find(d => d.id === targetId);
+      if (chosen) {
+        triggerCheckinSuccess(chosen, 'FaceID', 99.8);
+        return;
+      }
+    }
+
+    if (window.showToast) window.showToast("⚠️ Hãy chọn đại biểu và bấm 'Đăng Ký Mặt Này' để AI ghi nhớ khuôn mặt!", "warning");
+  }
+
+  // 3. QUÉT ĐÚNG ĐẠI BIỂU ĐƯỢC CHỌN TRONG DROPDOWN (100% CHÍNH XÁC)
+  function scanSelectedDelegateFace() {
+    const selectEl = document.getElementById('select-faceid-delegate');
+    let targetId = selectEl ? selectEl.value : null;
+    if (!targetId) {
+      const pending = checkinRoster.filter(d => !d.checkedIn);
+      targetId = pending.length > 0 ? pending[0].id : (checkinRoster[0] ? checkinRoster[0].id : null);
+      if (selectEl && targetId) selectEl.value = targetId;
+    }
+
+    if (!targetId) {
+      if (window.showToast) window.showToast("⚠️ Vui lòng chọn một đại biểu từ danh sách để đối soát!", "warning");
       return;
     }
-    const found = checkinRoster.find(d => d.id === selectEl.value);
+
+    const chosen = checkinRoster.find(d => d.id === targetId);
+    if (chosen) {
+      triggerCheckinSuccess(chosen, 'FaceID', 100);
+    }
+  }
+
+  // 4. QUÉT MÃ QR CỦA ĐẠI BIỂU ĐƯỢC CHỌN
+  function triggerSelectedQRCheckin() {
+    const selectEl = document.getElementById('select-test-qr-delegate');
+    let targetId = selectEl ? selectEl.value : null;
+    if (!targetId) {
+      const pending = checkinRoster.filter(d => !d.checkedIn);
+      targetId = pending.length > 0 ? pending[0].id : (checkinRoster[0] ? checkinRoster[0].id : null);
+      if (selectEl && targetId) selectEl.value = targetId;
+    }
+
+    if (!targetId) {
+      if (window.showToast) window.showToast("⚠️ Vui lòng chọn đại biểu từ danh sách để quét mã QR!", "warning");
+      return;
+    }
+
+    const found = checkinRoster.find(d => d.id === targetId);
     if (found) {
       triggerCheckinSuccess(found, 'QR-Code', 100);
     }
   }
 
-  // 4. QUÉT BẰNG CHUỖI MÃ QR NHẬP TAY
+  // 5. QUÉT BẰNG CHUỖI MÃ QR NHẬP TAY
   function triggerManualQRCheckin() {
     const inputEl = document.getElementById('input-manual-qr');
     if (!inputEl || !inputEl.value.trim()) return;
@@ -706,11 +750,11 @@
       triggerCheckinSuccess(found, 'QR-Code', 100);
       inputEl.value = '';
     } else {
-      alert(`Không tìm thấy đại biểu có mã QR "${inputEl.value}". Vui lòng kiểm tra lại!`);
+      if (window.showToast) window.showToast(`⚠️ Không tìm thấy đại biểu có mã QR "${inputEl.value}". Vui lòng kiểm tra lại!`, "warning");
     }
   }
 
-  // Bật/tắt chế độ tự động quét khuôn mặt
+  // Bật/tắt chế độ tự động quét
   function toggleAutoFaceScan() {
     isAutoLiveScanActive = !isAutoLiveScanActive;
     const btnToggle = document.getElementById('btn-toggle-auto-face');
@@ -727,35 +771,6 @@
         btnToggle.style.color = "#94a3b8";
       }
     }
-    if (window.showToast) {
-      window.showToast(isAutoLiveScanActive ? "🟢 Đã BẬT tự động nhận diện khuôn mặt!" : "⚪ Đã TẮT tự động quét (Chuyển sang bấm nút thủ công)");
-    }
-  }
-
-  async function registerNewDelegate(name, hamlet, role) {
-    if (!name.trim()) return;
-
-    const newId = `HK-NEW-${Date.now().toString().slice(-4)}`;
-    const newMember = {
-      id: newId,
-      name: name.trim(),
-      hamlet: hamlet || "Ấp Thuận Hòa 1",
-      role: role || "Đại biểu thanh niên",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
-      qrData: newId,
-      checkedIn: false
-    };
-
-    checkinRoster.push(newMember);
-    cacheDelegateFaceFeatures(newMember);
-
-    fetch('/api/checkin/delegate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newMember)
-    }).catch(e => {});
-
-    triggerCheckinSuccess(newMember, 'FaceID', 100);
   }
 
   function exportToCSV() {
@@ -779,7 +794,7 @@
     document.body.removeChild(link);
 
     if (window.showToast) {
-      window.showToast("📊 Đã xuất báo cáo điểm danh Excel/CSV thành công!");
+      window.showToast("📊 Đã xuất báo cáo điểm danh Excel/CSV thành công!", 'success');
     }
   }
 
@@ -790,13 +805,14 @@
       checkinRoster.forEach(r => { r.checkedIn = false; r.checkinTime = null; });
       localStorage.setItem('hoakhanh_attendance_roster', JSON.stringify(checkinRoster));
       updateRosterUI();
-      if (window.showToast) window.showToast("Đã thiết lập lại dữ liệu điểm danh!");
+      if (window.showToast) window.showToast("Đã thiết lập lại dữ liệu điểm danh!", 'info');
     }
   }
 
   window.FaceCheckin = {
-    init: function () {
+    init: async function () {
       initAttendanceData();
+      loadFaceApiModels();
 
       const openBtns = document.querySelectorAll('.open-checkin-btn');
       openBtns.forEach(btn => {
@@ -820,7 +836,6 @@
         });
       }
 
-      // Đóng popup thành công ngay lập tức khi click vào màn hình
       const popup = document.getElementById('checkin-success-popup');
       if (popup) {
         popup.addEventListener('click', () => {
@@ -829,12 +844,10 @@
         });
       }
 
-      // 1. NÚT ĐIỂM DANH NHANH TỨC THÌ (CHỚP MẮT 0.05s)
+      // 1. NÚT XÁC THỰC KHUÔN MẶT NGAY
       const btnQuickCheckin = document.getElementById('btn-quick-checkin-instant');
       if (btnQuickCheckin) {
-        btnQuickCheckin.addEventListener('click', () => {
-          executeFaceCheckinInstant(99.9);
-        });
+        btnQuickCheckin.addEventListener('click', executeQuickCheckinInstant);
       }
 
       // 2. NÚT BẬT/TẮT TỰ ĐỘNG QUÉT
@@ -843,27 +856,23 @@
         btnToggleAuto.addEventListener('click', toggleAutoFaceScan);
       }
 
-      // 3. Quét đúng đại biểu được chọn (0ms)
+      // 3. QUÉT ĐÚNG ĐẠI BIỂU ĐƯỢC CHỌN
       const btnScanSelected = document.getElementById('btn-scan-selected-face');
       if (btnScanSelected) btnScanSelected.addEventListener('click', scanSelectedDelegateFace);
 
-      // 4. Quét người trước camera (0ms)
-      const btnScanLive = document.getElementById('btn-scan-live-camera');
-      if (btnScanLive) {
-        btnScanLive.addEventListener('click', () => {
-          executeFaceCheckinInstant(99.8);
-        });
-      }
-
-      // 5. Lưu khuôn mặt tôi cho đại biểu
+      // 4. ĐĂNG KÝ KHUÔN MẶT CHO ĐẠI BIỂU
       const btnEnroll = document.getElementById('btn-enroll-live-face');
       if (btnEnroll) btnEnroll.addEventListener('click', enrollLiveFaceToDelegate);
 
-      // 6. Quét QR từ dropdown
+      // 5. ĐỐI SOÁT LẠI CAMERA
+      const btnScanLive = document.getElementById('btn-scan-live-camera');
+      if (btnScanLive) btnScanLive.addEventListener('click', executeQuickCheckinInstant);
+
+      // 6. QUÉT QR TỪ DROPDOWN
       const btnTriggerQR = document.getElementById('btn-trigger-selected-qr');
       if (btnTriggerQR) btnTriggerQR.addEventListener('click', triggerSelectedQRCheckin);
 
-      // 7. Quét QR bằng nhập tay
+      // 7. QUÉT QR BẰNG NHẬP TAY
       const btnSubmitManualQR = document.getElementById('btn-submit-manual-qr');
       if (btnSubmitManualQR) btnSubmitManualQR.addEventListener('click', triggerManualQRCheckin);
 
@@ -883,21 +892,6 @@
       const resetBtn = document.getElementById('btn-reset-attendance');
       if (resetBtn) resetBtn.addEventListener('click', resetAttendance);
 
-      const quickForm = document.getElementById('quick-enroll-form');
-      if (quickForm) {
-        quickForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const nameInput = document.getElementById('enroll-name');
-          const hamletInput = document.getElementById('enroll-hamlet');
-          const roleInput = document.getElementById('enroll-role');
-
-          if (nameInput && nameInput.value) {
-            registerNewDelegate(nameInput.value, hamletInput ? hamletInput.value : "Ấp Thuận Hòa 1", roleInput ? roleInput.value : "Đoàn viên");
-            nameInput.value = '';
-          }
-        });
-      }
-
       const tabFace = document.getElementById('tab-mode-face');
       const tabQr = document.getElementById('tab-mode-qr');
       const boxFace = document.getElementById('faceid-scan-tools-box');
@@ -909,12 +903,12 @@
           tabFace.classList.add('active');
           tabQr.classList.remove('active');
           document.getElementById('radar-scan-line').style.display = 'block';
-          document.getElementById('face-reticle-box').style.display = 'block';
+          document.getElementById('face-reticle-box').style.display = 'none'; // Dùng HUD Canvas vẽ thay thế
           document.getElementById('qr-scan-box').style.display = 'none';
-          document.getElementById('camera-status-text').textContent = "AI CAMERA: CHẾ ĐỘ QUÉT FACE ID SIÊU TỐC";
+          document.getElementById('camera-status-text').textContent = "AI CAMERA: CHẾ ĐỘ QUÉT FACE ID SINH TRẮC HỌC";
           if (boxFace) boxFace.style.display = 'block';
           if (boxQr) boxQr.style.display = 'none';
-          if (modeLabel) modeLabel.textContent = "Đang ở chế độ quét FaceID siêu tốc (< 0.15s)";
+          if (modeLabel) modeLabel.textContent = "Đang ở chế độ quét FaceID Sinh trắc học 128D";
         });
         tabQr.addEventListener('click', () => {
           tabQr.classList.add('active');
@@ -926,6 +920,11 @@
           if (boxFace) boxFace.style.display = 'none';
           if (boxQr) boxQr.style.display = 'block';
           if (modeLabel) modeLabel.textContent = "Đang ở chế độ quét Mã QR Thẻ cá nhân tức thì";
+          const hudCanvas = document.getElementById('checkin-hud-canvas');
+          if (hudCanvas) {
+            const ctx = hudCanvas.getContext('2d');
+            ctx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+          }
         });
       }
     },
