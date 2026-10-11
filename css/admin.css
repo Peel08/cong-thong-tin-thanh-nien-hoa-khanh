@@ -1,16 +1,16 @@
 /* ==========================================================================
-   GIAO DIỆN BẢNG ĐIỀU KHIỂN QUẢN TRỊ (ADMIN CMS) - ĐOÀN XÃ HÒA KHÁNH
+   GIAO DIỆN BẢNG ĐIỀU KHIỂN QUẢN TRỊ (ADMIN CMS) - ĐOÀN XÃ HÒA KHÁNH (TÂY NINH)
    ========================================================================== */
 
 :root {
-  --admin-bg: #07101e;
-  --admin-sidebar: #050b15;
-  --admin-card: rgba(13, 27, 49, 0.9);
-  --admin-card-border: rgba(0, 242, 254, 0.2);
-  --admin-cyan: #00f2fe;
-  --admin-blue: #0284c7;
-  --admin-gold: #fbbf24;
-  --admin-red: #ef4444;
+  --admin-bg: #071730;
+  --admin-sidebar: #051226;
+  --admin-card: rgba(11, 29, 61, 0.9);
+  --admin-card-border: rgba(56, 189, 248, 0.2);
+  --admin-blue: #005baa;
+  --admin-cyan: #38bdf8;
+  --admin-gold: #ffcc00;
+  --admin-red: #da251d;
   --admin-green: #10b981;
   --admin-text: #f8fafc;
   --admin-muted: #94a3b8;
@@ -55,17 +55,11 @@ body.admin-body {
   margin-bottom: 24px;
 }
 
-.admin-logo-badge {
-  width: 44px;
-  height: 44px;
-  background: radial-gradient(circle, #0284c7, #004b99);
-  border: 1.5px solid var(--admin-cyan);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  color: #fff;
+.admin-logo-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
 .admin-brand h2 {
@@ -80,6 +74,7 @@ body.admin-body {
   color: var(--admin-cyan);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-weight: 700;
 }
 
 .admin-nav-list {
@@ -109,15 +104,15 @@ body.admin-body {
 }
 
 .admin-nav-item button:hover {
-  background: rgba(0, 242, 254, 0.08);
+  background: rgba(0, 91, 170, 0.2);
   color: #fff;
 }
 
 .admin-nav-item button.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.3) 0%, rgba(0, 242, 254, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(0, 91, 170, 0.4) 0%, rgba(2, 132, 199, 0.25) 100%);
   border: 1px solid var(--admin-cyan);
   color: #fff;
-  box-shadow: 0 0 16px rgba(0, 242, 254, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 91, 170, 0.3);
 }
 
 .admin-nav-item button .nav-icon {
@@ -126,7 +121,7 @@ body.admin-body {
 
 .admin-nav-item .badge-count {
   margin-left: auto;
-  background: #da251d;
+  background: var(--admin-red);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 800;
@@ -183,14 +178,14 @@ body.admin-body {
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
 .admin-stat-icon {
   width: 50px;
   height: 50px;
   border-radius: 12px;
-  background: rgba(0, 242, 254, 0.12);
+  background: rgba(0, 91, 170, 0.2);
   color: var(--admin-cyan);
   display: flex;
   align-items: center;
@@ -214,7 +209,7 @@ body.admin-body {
 /* Tab Panels */
 .tab-content {
   display: none;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.25s ease;
 }
 
 .tab-content.active {
@@ -233,7 +228,7 @@ body.admin-body {
   border-radius: 16px;
   padding: 26px;
   margin-bottom: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
 }
 
 .admin-card-header {
@@ -273,8 +268,8 @@ body.admin-body {
 .form-input, .form-select, .form-textarea {
   width: 100%;
   padding: 10px 14px;
-  background: rgba(5, 12, 24, 0.8);
-  border: 1px solid rgba(0, 242, 254, 0.25);
+  background: rgba(5, 18, 40, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 10px;
   color: #fff;
   font-size: 0.9rem;
@@ -285,7 +280,7 @@ body.admin-body {
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   outline: none;
   border-color: var(--admin-cyan);
-  box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.35);
 }
 
 .form-textarea {
@@ -322,7 +317,7 @@ body.admin-body {
 }
 
 .data-table th {
-  background: rgba(3, 8, 18, 0.8);
+  background: rgba(3, 12, 28, 0.9);
   color: var(--admin-cyan);
   padding: 12px 16px;
   font-weight: 700;
@@ -336,7 +331,7 @@ body.admin-body {
 }
 
 .data-table tr:hover td {
-  background: rgba(0, 242, 254, 0.04);
+  background: rgba(2, 132, 199, 0.06);
 }
 
 /* Badges & Action Buttons */
@@ -383,14 +378,14 @@ body.admin-body {
 }
 
 .action-btn-primary {
-  background: var(--admin-cyan);
-  color: #041226;
+  background: var(--admin-blue);
+  color: #fff;
   font-weight: 700;
 }
 
 .action-btn-primary:hover {
-  background: #38bdf8;
-  box-shadow: 0 0 12px rgba(0, 242, 254, 0.5);
+  background: var(--admin-cyan);
+  color: #041226;
 }
 
 /* Responsive */

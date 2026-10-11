@@ -44,7 +44,6 @@ window.switchAdminTab = function(tabId) {
     'tab-overview': 'Tổng quan số liệu',
     'tab-org': 'Thông tin Đoàn xã',
     'tab-youth': '09 Gương thanh niên tiêu biểu 09 ấp',
-    'tab-products': 'Sản phẩm OCOP & Nông sản',
     'tab-volunteers': 'Đăng ký tình nguyện',
     'tab-ideas': 'Hòm thư hiến kế',
     'tab-attendance': 'Quản lý điểm danh AI FaceID'
@@ -54,7 +53,6 @@ window.switchAdminTab = function(tabId) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Gắn sự kiện chuyển tab menu
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tabId = btn.getAttribute('data-tab');
@@ -62,24 +60,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Nút đồng bộ
   document.getElementById('btn-sync-refresh').addEventListener('click', () => {
     loadAllData();
     showToast('Đang tải và đồng bộ lại dữ liệu...', 'success');
   });
 
-  // Tải dữ liệu ban đầu
   loadAllData();
 
-  // Khởi tạo các form
   initOrgForm();
   initYouthEditForm();
-  initProductEditForm();
   initVolunteerActions();
   initAttendanceActions();
 });
 
-// Tải toàn bộ dữ liệu từ API máy chủ
 async function loadAllData() {
   try {
     const [resData, resVol, resIdeas, resAtt] = await Promise.all([
@@ -97,13 +90,12 @@ async function loadAllData() {
     renderOverview();
     renderOrgSettings();
     renderYouthTable();
-    renderProductsTable();
     renderVolunteersTable();
     renderIdeasTable();
     renderAttendanceTable();
   } catch (err) {
     console.error('Lỗi tải dữ liệu:', err);
-    showToast('Lỗi kết nối máy chủ! Hãy kiểm tra server.', 'warning');
+    showToast('Lỗi kết nối máy chủ!', 'warning');
   }
 }
 
@@ -111,12 +103,10 @@ async function loadAllData() {
 function renderOverview() {
   document.getElementById('stat-ov-volunteers').textContent = volunteerList.length;
   document.getElementById('stat-ov-ideas').textContent = ideasList.length;
-  document.getElementById('stat-ov-products').textContent = appDatabase.products ? appDatabase.products.length : 0;
 
   const checkedCount = attendanceList.filter(a => a.checkedIn).length;
   document.getElementById('stat-ov-checkedin').textContent = `${checkedCount} / ${attendanceList.length}`;
 
-  // Badge count trên menu
   document.getElementById('badge-vol-count').textContent = volunteerList.length;
   document.getElementById('badge-idea-count').textContent = ideasList.length;
 }
@@ -205,7 +195,6 @@ function openYouthModal(youth) {
 }
 
 function initYouthEditForm() {
-  // Upload ảnh chân dung
   const fileInput = document.getElementById('edit-youth-file-input');
   fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -214,7 +203,6 @@ function initYouthEditForm() {
     const base64 = await toBase64(file);
     document.getElementById('edit-youth-img-preview').src = base64;
 
-    // Gửi lên server lưu vào assets/uploads/
     const uploadRes = await fetch('/api/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -227,7 +215,6 @@ function initYouthEditForm() {
     }
   });
 
-  // Submit form chỉnh sửa
   const form = document.getElementById('form-edit-youth');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -251,138 +238,7 @@ function initYouthEditForm() {
   });
 }
 
-/* 4. SẢN PHẨM OCOP & NÔNG SẢN */
-function renderProductsTable() {
-  const tbody = document.getElementById('table-products-tbody');
-  tbody.innerHTML = '';
-  if (!appDatabase || !appDatabase.products) return;
-
-  appDatabase.products.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>
-        <img src="${p.image}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
-      </td>
-      <td><strong>${p.title}</strong><br><small style="color:var(--admin-muted);">${p.category}</small></td>
-      <td>${p.owner}</td>
-      <td><span class="status-pill status-green">${p.hamlet}</span></td>
-      <td><strong style="color: var(--admin-gold);">${p.price}</strong></td>
-      <td>${p.badge}</td>
-      <td>
-        <button class="action-btn action-btn-primary btn-edit-prod" data-id="${p.id}">Sửa</button>
-        <button class="action-btn action-btn-danger btn-del-prod" data-id="${p.id}">Xóa</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll('.btn-edit-prod').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-id');
-      const found = appDatabase.products.find(p => p.id === id);
-      if (found) openProductModal(found);
-    });
-  });
-
-  tbody.querySelectorAll('.btn-del-prod').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-id');
-      if (confirm('Đồng chí có chắc chắn muốn xóa sản phẩm này khỏi hệ thống?')) {
-        appDatabase.products = appDatabase.products.filter(p => p.id !== id);
-        await saveDatabase();
-        renderProductsTable();
-        showToast('Đã xóa sản phẩm thành công!', 'success');
-      }
-    });
-  });
-}
-
-function openProductModal(prod = null) {
-  const modal = document.getElementById('modal-edit-product');
-  const title = document.getElementById('product-modal-title');
-
-  if (prod) {
-    title.textContent = 'Chỉnh sửa Sản phẩm OCOP';
-    document.getElementById('edit-prod-id').value = prod.id;
-    document.getElementById('edit-prod-title').value = prod.title;
-    document.getElementById('edit-prod-hamlet').value = prod.hamlet;
-    document.getElementById('edit-prod-owner').value = prod.owner;
-    document.getElementById('edit-prod-price').value = prod.price;
-    document.getElementById('edit-prod-badge').value = prod.badge;
-    document.getElementById('edit-prod-phone').value = prod.phone;
-    document.getElementById('edit-prod-image-url').value = prod.image;
-    document.getElementById('edit-prod-img-preview').src = prod.image;
-    document.getElementById('edit-prod-desc').value = prod.description;
-  } else {
-    title.textContent = 'Thêm mới Sản phẩm OCOP / Nông sản';
-    document.getElementById('edit-prod-id').value = '';
-    document.getElementById('form-edit-product').reset();
-    document.getElementById('edit-prod-image-url').value = 'assets/images/youth-products.jpg';
-    document.getElementById('edit-prod-img-preview').src = 'assets/images/youth-products.jpg';
-  }
-
-  modal.classList.add('open');
-}
-
-function initProductEditForm() {
-  document.getElementById('btn-add-product').addEventListener('click', () => openProductModal(null));
-
-  // Tải ảnh sản phẩm
-  const fileInput = document.getElementById('edit-prod-file-input');
-  fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const base64 = await toBase64(file);
-    document.getElementById('edit-prod-img-preview').src = base64;
-
-    const uploadRes = await fetch('/api/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: file.name, base64 })
-    }).then(r => r.json());
-
-    if (uploadRes.success) {
-      document.getElementById('edit-prod-image-url').value = uploadRes.url;
-      showToast('Đã tải ảnh sản phẩm lên máy chủ!', 'success');
-    }
-  });
-
-  // Submit form sản phẩm
-  const form = document.getElementById('form-edit-product');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('edit-prod-id').value;
-
-    const prodData = {
-      id: id || ('sp-' + Date.now().toString().slice(-4)),
-      title: document.getElementById('edit-prod-title').value,
-      hamlet: document.getElementById('edit-prod-hamlet').value,
-      owner: document.getElementById('edit-prod-owner').value,
-      price: document.getElementById('edit-prod-price').value,
-      badge: document.getElementById('edit-prod-badge').value || 'Đặc sản Hòa Khánh',
-      phone: document.getElementById('edit-prod-phone').value,
-      image: document.getElementById('edit-prod-image-url').value,
-      description: document.getElementById('edit-prod-desc').value,
-      category: 'Sản phẩm OCOP - Nông sản sạch'
-    };
-
-    if (id) {
-      const idx = appDatabase.products.findIndex(p => p.id === id);
-      if (idx !== -1) appDatabase.products[idx] = prodData;
-    } else {
-      if (!appDatabase.products) appDatabase.products = [];
-      appDatabase.products.push(prodData);
-    }
-
-    await saveDatabase();
-    document.getElementById('modal-edit-product').classList.remove('open');
-    renderProductsTable();
-    showToast(`Đã lưu sản phẩm "${prodData.title}"!`, 'success');
-  });
-}
-
-/* 5. QUẢN LÝ ĐĂNG KÝ TÌNH NGUYỆN */
+/* 4. QUẢN LÝ ĐĂNG KÝ TÌNH NGUYỆN */
 function renderVolunteersTable() {
   const tbody = document.getElementById('table-volunteers-tbody');
   tbody.innerHTML = '';
@@ -432,7 +288,7 @@ function initVolunteerActions() {
   });
 }
 
-/* 6. HÒM THƯ HIẾN KẾ */
+/* 5. HÒM THƯ HIẾN KẾ */
 function renderIdeasTable() {
   const tbody = document.getElementById('table-ideas-tbody');
   tbody.innerHTML = '';
@@ -475,7 +331,7 @@ function renderIdeasTable() {
   });
 }
 
-/* 7. QUẢN LÝ ĐIỂM DANH AI FACEID */
+/* 6. QUẢN LÝ ĐIỂM DANH AI FACEID */
 function renderAttendanceTable() {
   const tbody = document.getElementById('table-attendance-tbody');
   tbody.innerHTML = '';
