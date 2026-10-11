@@ -7,8 +7,8 @@
     "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     "qrData": "HK-TH1-01",
     "checkedIn": true,
-    "checkinTime": "15:28:33",
-    "method": "QR-Code"
+    "checkinTime": "15:40:57",
+    "method": "FaceID"
   },
   {
     "id": "HK-TH1-02",

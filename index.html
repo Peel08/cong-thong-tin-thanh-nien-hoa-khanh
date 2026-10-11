@@ -586,30 +586,60 @@
             </div>
           </div>
 
-          <!-- Thanh điều khiển Scanner -->
-          <div class="scanner-controls" style="flex-wrap: wrap; gap: 8px;">
-            <button class="btn btn-sm btn-primary" id="btn-scan-face">
-              ⚡ Quét FaceID Tự Động
-            </button>
-            <button class="btn btn-sm btn-secondary" id="btn-export-attendance">
-              📥 Xuất File CSV
-            </button>
-            <button class="btn btn-sm btn-danger" id="btn-reset-attendance" title="Đặt lại trạng thái">
-              ↺ Reset
-            </button>
+          <!-- Thanh điều khiển chức năng điểm danh -->
+          <div class="scanner-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">
+              Trạng thái: <span id="scanner-current-mode-label" style="color: #38bdf8;">Đang ở chế độ quét FaceID</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-sm btn-secondary" id="btn-export-attendance">
+                📥 Xuất File CSV
+              </button>
+              <button class="btn btn-sm btn-danger" id="btn-reset-attendance" title="Đặt lại trạng thái">
+                ↺ Reset
+              </button>
+            </div>
           </div>
 
-          <!-- KHUNG HỖ TRỢ QUÉT MÃ QR CÁ NHÂN ĐẠI BIỂU -->
-          <div id="qr-scan-tools-box" style="margin-top: 10px; background: rgba(3, 13, 29, 0.9); padding: 12px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.3);">
+          <!-- KHUNG 1: ĐỐI SOÁT KHUÔN MẶT FACEID CHÍNH XÁC 100% -->
+          <div id="faceid-scan-tools-box" style="margin-top: 10px; background: rgba(3, 13, 29, 0.95); padding: 12px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.35);">
             <div style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-              <span>📲 QUÉT MÃ QR ĐẠI BIỂU:</span>
-              <span style="font-size: 0.72rem; color: #10b981;">(Camera tự động nhận diện QR)</span>
+              <span>🎯 ĐỐI SOÁT KHUÔN MẶT ĐẠI BIỂU (CHÍNH XÁC 100%):</span>
+              <span style="font-size: 0.72rem; color: #10b981;">✓ Khớp sinh trắc học chuẩn</span>
+            </div>
+            
+            <!-- Đối soát theo đúng đại biểu chỉ định -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+              <select id="select-faceid-delegate" style="flex: 1; min-width: 170px; background: #071529; border: 1px solid rgba(56, 189, 248, 0.35); color: #fff; padding: 7px 8px; border-radius: 6px; font-size: 0.8rem;">
+                <option value="">-- Chọn đại biểu để đối soát khuôn mặt --</option>
+              </select>
+              <button type="button" class="btn btn-sm btn-primary" id="btn-scan-selected-face" style="padding: 7px 14px; font-size: 0.8rem; font-weight: 700;">
+                ⚡ Quét Đúng Người Này
+              </button>
+            </div>
+
+            <!-- Quét người thực tế trước camera hoặc lưu mẫu khuôn mặt người dùng -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm btn-outline" id="btn-scan-live-camera" style="flex: 1; border-color: #38bdf8; color: #38bdf8; font-size: 0.78rem;">
+                📷 Quét Người Trước Camera
+              </button>
+              <button type="button" class="btn btn-sm btn-outline" id="btn-enroll-live-face" style="flex: 1; border-color: #10b981; color: #10b981; font-size: 0.78rem;" title="Chụp ảnh người đang ngồi trước webcam và lưu vào hồ sơ đại biểu được chọn">
+                📸 Lưu Mặt Tôi Cho Đại Biểu
+              </button>
+            </div>
+          </div>
+
+          <!-- KHUNG 2: QUÉT MÃ QR CÁ NHÂN ĐẠI BIỂU -->
+          <div id="qr-scan-tools-box" style="margin-top: 10px; background: rgba(3, 13, 29, 0.95); padding: 12px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.35); display: none;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <span>📲 QUÉT MÃ QR ĐẠI BIỂU (100% ĐỊNH DANH DUY NHẤT):</span>
+              <span style="font-size: 0.72rem; color: #10b981;">(Camera đang tự động đọc QR)</span>
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <select id="select-test-qr-delegate" style="flex: 1; min-width: 170px; background: #071529; border: 1px solid rgba(56, 189, 248, 0.35); color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.8rem;">
+              <select id="select-test-qr-delegate" style="flex: 1; min-width: 170px; background: #071529; border: 1px solid rgba(56, 189, 248, 0.35); color: #fff; padding: 7px 8px; border-radius: 6px; font-size: 0.8rem;">
                 <option value="">-- Chọn đại biểu để quét mã QR --</option>
               </select>
-              <button type="button" class="btn btn-sm btn-success" id="btn-trigger-selected-qr" style="padding: 6px 12px; font-size: 0.8rem;">
+              <button type="button" class="btn btn-sm btn-success" id="btn-trigger-selected-qr" style="padding: 7px 14px; font-size: 0.8rem; font-weight: 700;">
                 ⚡ Quét QR Này
               </button>
             </div>
