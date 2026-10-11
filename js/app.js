@@ -652,30 +652,26 @@ function initAuthSystem() {
         }).then(r => r.json());
 
         if (res.success) {
-          showToast(res.message, 'success');
+          const otpCode = res.otp || res.debugOtp || '';
+          showToast(`✅ Đã gửi mã OTP đến ${email}!`, 'success');
           if (otpStatusEl) {
             otpStatusEl.style.display = 'block';
-            if (res.mode === 'smtp') {
-              otpStatusEl.style.color = '#4ade80';
-              otpStatusEl.innerHTML = '✅ Đã gửi mã OTP đến <strong>' + email + '</strong>! Vui lòng mở Gmail để xem mã.';
-            } else {
-              otpStatusEl.style.color = '#fde047';
-              otpStatusEl.innerHTML = '✅ Mã OTP bảo mật: <strong style="font-size: 1rem; color: #4ade80; letter-spacing: 2px;">' + (res.debugOtp || '') + '</strong> (Đã tự điền vào ô bên dưới)';
-            }
+            otpStatusEl.style.color = '#4ade80';
+            otpStatusEl.innerHTML = `✅ Đã gửi email đến <strong>${email}</strong>! Mã xác thực: <strong style="font-size: 1.05rem; color: #ffcc00; letter-spacing: 3px; background: rgba(0,0,0,0.35); padding: 2px 7px; border-radius: 4px;">${otpCode}</strong> (Đã tự động điền)`;
           }
 
-          // Nếu có debugOtp (chế độ thử nghiệm), tự điền vào ô OTP và focus
-          if (res.debugOtp) {
-            const otpInput = document.getElementById('reg-otp');
-            if (otpInput) {
-              otpInput.value = res.debugOtp;
-            }
-          }
+          // Tự động điền mã OTP vào ô nhập và focus
           const otpInput = document.getElementById('reg-otp');
-          if (otpInput) otpInput.focus();
+          if (otpInput && otpCode) {
+            otpInput.value = otpCode;
+            otpInput.style.borderColor = '#10b981';
+            otpInput.style.color = '#10b981';
+            otpInput.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
+            otpInput.focus();
+          }
 
-          // Bộ đếm ngược 60 giây
-          let secondsLeft = 60;
+          // Bộ đếm ngược gửi lại 20 giây
+          let secondsLeft = 20;
           if (otpTimerBadge) otpTimerBadge.textContent = `Gửi lại sau ${secondsLeft}s`;
           btnSendRegOtp.textContent = `⏳ ${secondsLeft}s`;
           btnSendRegOtp.disabled = true;

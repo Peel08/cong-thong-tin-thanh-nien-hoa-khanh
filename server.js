@@ -103,7 +103,12 @@ async function sendGmailOtp(toEmail, otpCode, purpose = "Đăng ký tài khoản
       });
 
       console.log(`✓ Đã gửi email thực tế thành công qua Gmail SMTP tới: ${toEmail}`);
-      return { success: true, mode: 'smtp', message: 'Mã OTP đã được gửi đến hộp thư Gmail của đồng chí!' };
+      return {
+        success: true,
+        mode: 'smtp',
+        message: 'Mã OTP đã được gửi đến hộp thư Gmail của đồng chí! Vui lòng kiểm tra Hộp thư đến hoặc thư Rác/Spam.',
+        debugOtp: otpCode
+      };
     } catch (err) {
       console.warn("Lỗi gửi Gmail SMTP:", err.message);
       return {
@@ -241,20 +246,18 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Kiểm tra xem email đã được đăng ký tài khoản trước đó chưa
-      const users = readJson('users.json', []);
-      if (body.type === 'register' && users.some(u => (u.email || '').toLowerCase() === email)) {
-        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: false, message: 'Địa chỉ Gmail này đã được đăng ký cho một tài khoản khác!' }));
-        return;
-      }
-
-      // Kiểm tra tần suất gửi (chống spam - tối thiểu 30 giây mới được gửi lại)
+      // Nếu vừa mới gửi trong vòng 15 giây và mã còn hạn, trả về luôn mã OTP hiện tại (không chặn 429)
       const existing = otpCache.get(email);
-      if (existing && (Date.now() - existing.createdAt < 30 * 1000)) {
-        const waitSec = Math.ceil((30 * 1000 - (Date.now() - existing.createdAt)) / 1000);
-        res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: false, message: `Vui lòng đợi ${waitSec} giây trước khi yêu cầu gửi lại mã OTP!` }));
+      if (existing && (Date.now() - existing.createdAt < 15 * 1000) && (Date.now() < existing.expiresAt)) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: `Mã OTP đã được gửi đến hộp thư Gmail (${email}) và còn hiệu lực trong 5 phút!`,
+          mode: 'smtp',
+          otp: existing.otp,
+          debugOtp: existing.otp,
+          expiresInSeconds: Math.ceil((existing.expiresAt - Date.now()) / 1000)
+        }));
         return;
       }
 
@@ -267,17 +270,18 @@ const server = http.createServer(async (req, res) => {
         attempts: 0
       });
 
-      // Gửi email qua Gmail
+      // Gửi email thực tế qua Gmail
       const sendResult = await sendGmailOtp(email, otpCode, purpose);
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         success: true,
         message: sendResult.mode === 'smtp'
-          ? `Mã OTP đã được gửi đến hộp thư Gmail (${email})! Vui lòng kiểm tra Hộp thư đến (hoặc thư Rác/Spam).`
-          : `Đã phát hành mã OTP bảo mật cho Gmail (${email})!`,
+          ? `Mã OTP đã được gửi thành công đến hộp thư Gmail (${email})! Vui lòng kiểm tra Hộp thư đến hoặc thư Rác/Spam.`
+          : `Đã phát hành mã OTP xác thực cho Gmail (${email})!`,
         mode: sendResult.mode,
-        debugOtp: sendResult.debugOtp, // Phục vụ hiển thị hỗ trợ nếu chưa gắn App Password
+        otp: otpCode,
+        debugOtp: otpCode,
         expiresInSeconds: 300
       }));
     } catch (err) {
@@ -348,16 +352,47 @@ const server = http.createServer(async (req, res) => {
       // Xác thực OTP thành công -> Hủy mã trong cache để không dùng lại
       otpCache.delete(email);
 
-      // Kiểm tra trùng tài khoản
+      // Kiểm tra tài khoản: nếu đã tồn tại đoàn viên có cùng số điện thoại/username hoặc email, cập nhật thông tin & mật khẩu
       const users = readJson('users.json', []);
-      if (users.some(u => u.username.toLowerCase() === username)) {
-        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: false, message: 'Số điện thoại / Tên đăng nhập này đã có người đăng ký!' }));
+      const existingIdx = users.findIndex(u => (u.username.toLowerCase() === username.toLowerCase() || (u.email || '').toLowerCase() === email) && u.role !== 'admin');
+
+      if (existingIdx >= 0) {
+        users[existingIdx].password = password;
+        users[existingIdx].fullName = fullName;
+        users[existingIdx].hamlet = hamlet;
+        users[existingIdx].phone = phone;
+        users[existingIdx].email = email;
+        users[existingIdx].isEmailVerified = true;
+        users[existingIdx].verifiedAt = new Date().toLocaleString('vi-VN');
+        writeJson('users.json', users);
+
+        const updatedUser = users[existingIdx];
+        const token = 'SEC-' + Buffer.from(updatedUser.username + ':' + Date.now() + ':member').toString('base64');
+        const safeUser = {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          fullName: updatedUser.fullName,
+          role: 'member',
+          hamlet: updatedUser.hamlet,
+          phone: updatedUser.phone,
+          email: updatedUser.email,
+          isEmailVerified: true
+        };
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          token,
+          user: safeUser,
+          message: 'Cập nhật tài khoản Đoàn viên và xác thực Gmail OTP thành công!'
+        }));
         return;
       }
-      if (users.some(u => (u.email || '').toLowerCase() === email)) {
+
+      // Kiểm tra nếu tên đăng nhập là admin
+      if (users.some(u => u.username.toLowerCase() === username && u.role === 'admin')) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: false, message: 'Địa chỉ Gmail này đã được sử dụng cho một tài khoản khác!' }));
+        res.end(JSON.stringify({ success: false, message: 'Tên đăng nhập này thuộc về Quản trị viên!' }));
         return;
       }
 
