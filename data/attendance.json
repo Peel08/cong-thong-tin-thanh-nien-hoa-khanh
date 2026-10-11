@@ -17,8 +17,9 @@
     "role": "Đại biểu thanh niên",
     "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
     "qrData": "HK-TH1-02",
-    "checkedIn": false,
-    "checkinTime": null
+    "checkedIn": true,
+    "checkinTime": "15:48:22",
+    "method": "FaceID"
   },
   {
     "id": "HK-TH2-01",
@@ -27,8 +28,9 @@
     "role": "Phó Bí thư Chi đoàn",
     "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
     "qrData": "HK-TH2-01",
-    "checkedIn": false,
-    "checkinTime": null
+    "checkedIn": true,
+    "checkinTime": "15:54:55",
+    "method": "FaceID"
   },
   {
     "id": "HK-TH2-02",
@@ -37,8 +39,9 @@
     "role": "Đại biểu thanh niên",
     "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     "qrData": "HK-TH2-02",
-    "checkedIn": false,
-    "checkinTime": null
+    "checkedIn": true,
+    "checkinTime": "15:57:16",
+    "method": "FaceID"
   },
   {
     "id": "HK-BL-01",

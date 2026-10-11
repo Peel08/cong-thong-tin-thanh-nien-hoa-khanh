@@ -13,6 +13,11 @@ window.showToast = function (message, type = 'info') {
     document.body.appendChild(container);
   }
 
+  // Giữ tối đa 2 thông báo trên màn hình để tránh che khuất giao diện
+  while (container.children.length >= 2) {
+    container.removeChild(container.firstChild);
+  }
+
   const toast = document.createElement('div');
   toast.className = 'toast';
   const icon = type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '⚡';
@@ -24,7 +29,7 @@ window.showToast = function (message, type = 'info') {
     toast.style.transform = 'translateX(100%)';
     toast.style.transition = 'all 0.3s ease';
     setTimeout(() => toast.remove(), 300);
-  }, 4000);
+  }, 2500);
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
