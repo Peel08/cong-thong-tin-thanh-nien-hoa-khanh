@@ -1,74 +1,58 @@
-import numpy as np
 from PIL import Image, ImageFilter
+import numpy as np
 from collections import deque
 
 def clean_transparent_logo(input_path, output_path):
-    img = Image.open(input_path).convert("RGBA")
-    width, height = img.size
-    arr = np.array(img, dtype=np.float32)
+    img = Image.open(input_path).convert('RGBA')
+    arr = np.array(img)
+    h, w, _ = arr.shape
+    r, g, b = arr[:,:,0].astype(int), arr[:,:,1].astype(int), arr[:,:,2].astype(int)
 
-    # Detect white/near-white pixels
-    r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
-    # Background in images.png is > 240
-    is_white = (r > 238) & (g > 238) & (b > 238)
+    # 1. Non-white
+    is_bg_white = (r > 240) & (g > 240) & (b > 240)
+    emblem_pixels = ~is_bg_white
 
-    visited = np.zeros((height, width), dtype=bool)
-    exterior_bg = np.zeros((height, width), dtype=bool)
-
-    queue = deque()
-    # Edges
-    for y in [0, height - 1]:
-        for x in range(width):
-            if is_white[y, x] and not visited[y, x]:
-                visited[y, x] = True
-                exterior_bg[y, x] = True
-                queue.append((y, x))
-
-    for x in [0, width - 1]:
-        for y in range(height):
-            if is_white[y, x] and not visited[y, x]:
-                visited[y, x] = True
-                exterior_bg[y, x] = True
-                queue.append((y, x))
-
-    while queue:
-        cy, cx = queue.popleft()
-        for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            ny, nx = cy + dy, cx + dx
-            if 0 <= ny < height and 0 <= nx < width and not visited[ny, nx]:
-                if is_white[ny, nx]:
-                    visited[ny, nx] = True
-                    exterior_bg[ny, nx] = True
-                    queue.append((ny, nx))
-
-    # Mask: 255 for foreground, 0 for exterior_bg
-    mask_arr = np.where(exterior_bg, 0, 255).astype(np.uint8)
-    mask_img = Image.fromarray(mask_arr, mode="L")
-    
-    # Slight antialiasing at the boundary
-    # Dilate mask slightly and feather
-    dilated = mask_img.filter(ImageFilter.MaxFilter(3))
-    eroded = mask_img.filter(ImageFilter.MinFilter(3))
-    
-    # Final alpha: exact 0 outside, feathered on the 1-pixel border
-    final_alpha = np.array(mask_img, dtype=np.float32)
+    # 2. Dilate to bridge gaps in green circle boundary
+    mask_img = Image.fromarray((emblem_pixels * 255).astype(np.uint8), mode='L')
+    dilated = mask_img.filter(ImageFilter.MaxFilter(9))
     dil_arr = np.array(dilated)
-    ero_arr = np.array(eroded)
-    
-    border_pixels = (dil_arr > 0) & (ero_arr < 255)
-    for y, x in zip(*np.where(border_pixels)):
-        brightness = (r[y, x] + g[y, x] + b[y, x]) / 3.0
-        if brightness > 220:
-            final_alpha[y, x] = max(0.0, min(255.0, (255.0 - brightness) / 35.0 * 255.0))
 
-    final_alpha[exterior_bg] = 0
+    # 3. BFS flood fill exterior only
+    exterior = np.zeros((h, w), dtype=bool)
+    q = deque()
+    for y in range(h):
+        for x in [0, w-1]:
+            if dil_arr[y, x] == 0 and not exterior[y, x]:
+                exterior[y, x] = True
+                q.append((y, x))
+    for x in range(w):
+        for y in [0, h-1]:
+            if dil_arr[y, x] == 0 and not exterior[y, x]:
+                exterior[y, x] = True
+                q.append((y, x))
 
-    arr_out = np.array(img)
-    arr_out[:, :, 3] = final_alpha.astype(np.uint8)
+    while q:
+        cy, cx = q.popleft()
+        for dy, dx in [(-1,0), (1,0), (0,-1), (0,1)]:
+            ny, nx = cy + dy, cx + dx
+            if 0 <= ny < h and 0 <= nx < w and not exterior[ny, nx]:
+                if dil_arr[ny, nx] == 0:
+                    exterior[ny, nx] = True
+                    q.append((ny, nx))
 
+    # 4. Fill interior solid & erode back
+    interior_img = Image.fromarray(((~exterior) * 255).astype(np.uint8), mode='L')
+    eroded_interior = interior_img.filter(ImageFilter.MinFilter(11))
+
+    # 5. Smooth boundary
+    edge_smooth = eroded_interior.filter(ImageFilter.GaussianBlur(0.7))
+    final_alpha = np.array(edge_smooth)
+
+    clean_rgb = arr[:,:,:3].copy()
+    arr_out = np.dstack([clean_rgb, final_alpha])
     res = Image.fromarray(arr_out)
     res.save(output_path, "PNG")
-    print(f"Clean transparent logo saved to {output_path}")
+    print(f"Clean logo saved to {output_path}")
 
 if __name__ == "__main__":
     clean_transparent_logo("images.png", "logo.png")

@@ -108,22 +108,48 @@
         continue;
       }
 
-      // Nếu có avatar dạng Base64 chụp từ webcam
-      if (delegate.avatar && delegate.avatar.startsWith('data:image')) {
+      // Xử lý tất cả ảnh avatar (bao gồm ảnh tải lên assets/uploads/... hoặc data:image)
+      if (delegate.avatar) {
         try {
           const img = new Image();
+          img.crossOrigin = 'anonymous';
           img.src = delegate.avatar;
-          await new Promise(r => { img.onload = r; img.onerror = r; });
-          const detection = await window.faceapi
-            .detectSingleFace(img, new window.faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4 }))
-            .withFaceLandmarks()
-            .withFaceDescriptor();
+          await new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
 
-          if (detection && detection.descriptor) {
-            enrolledDescriptors.set(delegate.id, detection.descriptor);
-            delegate.descriptor = Array.from(detection.descriptor);
+          if (img.width > 0 && img.height > 0) {
+            // Chuẩn hóa kích thước qua canvas trung gian để TinyFaceDetector phát hiện cực nhạy
+            const canvas = document.createElement('canvas');
+            const maxDim = 480;
+            const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            const detection = await window.faceapi
+              .detectSingleFace(canvas, new window.faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.25 }))
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+
+            if (detection && detection.descriptor) {
+              enrolledDescriptors.set(delegate.id, detection.descriptor);
+              delegate.descriptor = Array.from(detection.descriptor);
+              console.log(`✓ AI đã trích xuất thành công mẫu sinh trắc học cho: ${delegate.name} (${delegate.id})`);
+
+              // Lưu mẫu vector lên server để các phiên sau nạp tức thì
+              fetch('/api/checkin/delegate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: delegate.id, descriptor: delegate.descriptor })
+              }).catch(() => {});
+            }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn("Lỗi trích xuất mẫu khuôn mặt cho", delegate.name, e);
+        }
       }
     }
   }
@@ -305,9 +331,20 @@
               }
             });
 
-            const isMatch = (bestMatch && lowestDist < 0.58);
+            // Ưu tiên đối soát đại biểu được chỉ định trong dropdown nếu gần khớp
+            const selectEl = document.getElementById('select-faceid-delegate');
+            const selectedDelegateId = selectEl ? selectEl.value : null;
+            if (selectedDelegateId && enrolledDescriptors.has(selectedDelegateId)) {
+              const sDist = computeEuclideanDistance(detection.descriptor, enrolledDescriptors.get(selectedDelegateId));
+              if (sDist < 0.68) {
+                bestMatch = checkinRoster.find(d => d.id === selectedDelegateId) || bestMatch;
+                lowestDist = Math.min(lowestDist, sDist);
+              }
+            }
+
+            const isMatch = (bestMatch && lowestDist < 0.63);
             const boxColor = isMatch ? '#10b981' : '#f59e0b';
-            const matchScore = isMatch ? Math.min(99.9, Math.round((1 - lowestDist / 0.6) * 1000) / 10 + 90) : 0;
+            const matchScore = isMatch ? Math.min(99.9, Math.max(91.5, Math.round((1 - lowestDist / 0.65) * 1000) / 10 + 90)) : 0;
 
             // Vẽ khung nhận diện công nghệ cao (Bounding Box Corners)
             drawTechCorners(ctx, drawBox.x, drawBox.y, drawBox.width, drawBox.height, boxColor);
