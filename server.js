@@ -6,7 +6,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 const sqlDb = require('./db.js');
 
 const PORT = process.env.PORT || 8080;
@@ -44,9 +43,39 @@ try {
 // Bộ nhớ đệm OTP xác thực: email -> { otp, expiresAt, attempts }
 const otpCache = new Map();
 
+// Bộ đếm gửi OTP theo IP để chống spam
+const otpRateLimit = new Map(); // ip -> { count, windowStart }
+
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
+// Kiểm tra giới hạn gửi OTP (tối đa 5 lần / 10 phút / IP)
+function checkOtpRateLimit(ip) {
+  const now = Date.now();
+  const WINDOW_MS = 10 * 60 * 1000; // 10 phút
+  const MAX_REQUESTS = 5;
+  const entry = otpRateLimit.get(ip);
+  if (!entry || now - entry.windowStart > WINDOW_MS) {
+    otpRateLimit.set(ip, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= MAX_REQUESTS) return false;
+  entry.count++;
+  return true;
+}
+
+// Dọn dẹp bộ nhớ đệm OTP hết hạn (chạy mỗi 15 phút)
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, data] of otpCache.entries()) {
+    if (now > data.expiresAt) otpCache.delete(email);
+  }
+  // Dọn rate limit cũ
+  for (const [ip, data] of otpRateLimit.entries()) {
+    if (now - data.windowStart > 15 * 60 * 1000) otpRateLimit.delete(ip);
+  }
+}, 15 * 60 * 1000);
 
 async function sendGmailOtp(toEmail, otpCode, purpose = "Đăng ký tài khoản Đoàn viên") {
   const db = readJson('database.json', {});
@@ -115,27 +144,26 @@ async function sendGmailOtp(toEmail, otpCode, purpose = "Đăng ký tài khoản
       return {
         success: true,
         mode: 'smtp',
-        message: 'Mã OTP đã được gửi đến hộp thư Gmail của đồng chí! Vui lòng kiểm tra Hộp thư đến hoặc thư Rác/Spam.',
-        debugOtp: otpCode
+        message: 'Mã OTP đã được gửi đến hộp thư Gmail của đồng chí! Vui lòng kiểm tra Hộp thư đến hoặc thư Rác/Spam.'
       };
     } catch (err) {
       console.warn("Lỗi gửi Gmail SMTP:", err.message);
+      // Lỗi SMTP: ghi log server nhưng KHÔNG trả OTP về client
       return {
-        success: true,
-        mode: 'fallback',
-        message: 'Đã phát hành mã OTP bảo mật Gmail!',
-        debugOtp: otpCode,
+        success: false,
+        mode: 'error',
+        message: 'Không thể gửi email OTP qua Gmail. Vui lòng kiểm tra lại cấu hình SMTP hoặc liên hệ Quản trị viên!',
         error: err.message
       };
     }
   }
 
-  // Môi trường thử nghiệm / chưa cấu hình App Password: trả về mã OTP rõ ràng
+  // Chưa cấu hình App Password: báo lỗi rõ ràng thay vì giả lập
+  console.warn('[OTP] Chưa cấu hình Gmail App Password - không thể gửi OTP thực!');
   return {
-    success: true,
-    mode: 'simulation',
-    message: 'Đã phát hành mã OTP xác thực Gmail!',
-    debugOtp: otpCode
+    success: false,
+    mode: 'not_configured',
+    message: 'Hệ thống chưa cấu hình gửi mail OTP. Vui lòng liên hệ Quản trị viên để cấu hình Gmail App Password!'
   };
 }
 
@@ -185,8 +213,8 @@ function getRequestBody(req) {
 
 // Tạo HTTP Server
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = url.parse(req.url, true);
-  const pathname = decodeURIComponent(parsedUrl.pathname);
+  const reqUrl = new URL(req.url, `http://localhost`);
+  const pathname = decodeURIComponent(reqUrl.pathname);
   const method = req.method.toUpperCase();
 
   // CORS Headers cho mọi request
@@ -211,7 +239,7 @@ const server = http.createServer(async (req, res) => {
       const username = (body.username || '').trim().toLowerCase();
       const password = (body.password || '').trim();
 
-      const user = sqlDb.findUserByUsername(username);
+      const user = await sqlDb.findUserByUsername(username);
 
       if (!user || user.password !== password) {
         res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -254,11 +282,19 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      // Kiểm tra giới hạn tần suất gửi OTP (chống spam)
+      const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+      if (!checkOtpRateLimit(clientIp)) {
+        res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, message: 'Bạn đã gửi quá nhiều yêu cầu OTP. Vui lòng thử lại sau 10 phút!' }));
+        return;
+      }
+
       // 1. Lấy mã OTP còn hạn (trong 5 phút) hoặc sinh mã OTP 6 chữ số mới
       let otpCode;
       const existing = otpCache.get(email);
       if (existing && Date.now() < existing.expiresAt) {
-        otpCode = existing.otp;
+        otpCode = existing.otp; // Sử dụng lại mã cũ còn hiệu lực
       } else {
         otpCode = generateOtp();
         otpCache.set(email, {
@@ -269,21 +305,25 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      // 2. Kích hoạt gửi email qua Gmail SMTP trong background (không chặn HTTP làm treo giao diện)
-      sendGmailOtp(email, otpCode, purpose).catch(err => {
-        console.warn(`[Gửi Gmail background cho ${email}]:`, err.message);
-      });
+      // 2. Gửi email OTP qua Gmail SMTP
+      const sendResult = await sendGmailOtp(email, otpCode, purpose);
+
+      if (!sendResult.success) {
+        res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, message: sendResult.message }));
+        return;
+      }
 
       // 3. Phản hồi thành công BẢO MẬT (TUYỆT ĐỐI KHÔNG TRẢ VỀ MÃ OTP RA CLIENT)
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         success: true,
-        message: `Mã OTP bảo mật 06 chữ số đã được gửi đến hộp thư Gmail (${email})! Vui lòng mở Gmail (kiểm tra Hộp thư đến hoặc thư Rác/Spam) để lấy mã.`,
+        message: `✅ Mã OTP bảo mật 06 chữ số đã được gửi đến hộp thư Gmail (${email})! Vui lòng mở Gmail (kiểm tra Hộp thư đến hoặc thư Rác/Spam) để lấy mã.`,
         expiresInSeconds: 300
       }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ success: false, message: err.message }));
+      res.end(JSON.stringify({ success: false, message: 'Lỗi hệ thống máy chủ. Vui lòng thử lại sau!' }));
     }
     return;
   }
@@ -349,8 +389,8 @@ const server = http.createServer(async (req, res) => {
       // Xác thực OTP thành công -> Hủy mã trong cache để không dùng lại
       otpCache.delete(email);
 
-      // Kiểm tra tài khoản bằng truy vấn SQL (SQLite)
-      const existingUser = sqlDb.findUserByUsername(username) || sqlDb.findUserByEmail(email);
+      // Kiểm tra tài khoản bằng truy vấn SQL (SQLite / Turso Cloud)
+      const existingUser = (await sqlDb.findUserByUsername(username)) || (await sqlDb.findUserByEmail(email));
 
       if (existingUser && existingUser.role === 'admin') {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -372,7 +412,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: existingUser ? existingUser.createdAt : new Date().toLocaleString('vi-VN')
       };
 
-      sqlDb.upsertUser(userData);
+      await sqlDb.upsertUser(userData);
 
       const token = 'SEC-' + Buffer.from(userData.username + ':' + Date.now() + ':member').toString('base64');
       const safeUser = {
@@ -403,7 +443,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (pathname === '/api/auth/users' && method === 'GET') {
-    const safeUsers = sqlDb.getAllUsers();
+    const safeUsers = await sqlDb.getAllUsers();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(safeUsers));
     return;
@@ -444,6 +484,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       writeJson('database.json', db);
+      await sqlDb.saveSetting('organization_data', db);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ success: true, message: 'Đã lưu cấu hình gửi mã OTP Gmail thành công!' }));
     } catch (err) {
@@ -469,12 +510,11 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
-        success: true,
-        message: testResult.mode === 'smtp'
-          ? `Gửi email thử nghiệm thành công tới ${testEmail}! Vui lòng kiểm tra hộp thư.`
-          : `Đã thử nghiệm ở chế độ mô phỏng (Chưa lưu App Password hợp lệ)! Mã test: ${testOtp}`,
+        success: testResult.success,
         mode: testResult.mode,
-        debugOtp: testResult.debugOtp
+        message: testResult.success
+          ? `✅ Gửi email thử nghiệm thành công tới ${testEmail}! Vui lòng kiểm tra hộp thư.`
+          : (testResult.message || 'Không thể gửi email thử nghiệm. Kiểm tra lại cấu hình SMTP!')
       }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -495,6 +535,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const body = await getRequestBody(req);
         writeJson('database.json', body);
+        await sqlDb.saveSetting('organization_data', body);
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true, message: 'Đã lưu dữ liệu vĩnh viễn vào máy chủ!' }));
       } catch (err) {
@@ -508,7 +549,7 @@ const server = http.createServer(async (req, res) => {
   // --- API 2: ĐĂNG KÝ TÌNH NGUYỆN (/api/volunteers) ---
   if (pathname === '/api/volunteers') {
     if (method === 'GET') {
-      const list = sqlDb.getVolunteers();
+      const list = await sqlDb.getVolunteers();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(list));
       return;
@@ -516,7 +557,7 @@ const server = http.createServer(async (req, res) => {
     if (method === 'POST') {
       try {
         const item = await getRequestBody(req);
-        const saved = sqlDb.addVolunteer(item);
+        const saved = await sqlDb.addVolunteer(item);
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true, item: saved }));
       } catch (err) {
@@ -530,7 +571,7 @@ const server = http.createServer(async (req, res) => {
   // Xóa đăng ký tình nguyện
   if (pathname.startsWith('/api/volunteers/') && method === 'DELETE') {
     const id = pathname.replace('/api/volunteers/', '');
-    sqlDb.deleteVolunteer(id);
+    await sqlDb.deleteVolunteer(id);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ success: true }));
     return;
@@ -539,7 +580,7 @@ const server = http.createServer(async (req, res) => {
   // --- API 3: HÒM THƯ HIẾN KẾ THANH NIÊN (/api/ideas) ---
   if (pathname === '/api/ideas') {
     if (method === 'GET') {
-      const list = sqlDb.getIdeas();
+      const list = await sqlDb.getIdeas();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(list));
       return;
@@ -547,7 +588,7 @@ const server = http.createServer(async (req, res) => {
     if (method === 'POST') {
       try {
         const item = await getRequestBody(req);
-        const saved = sqlDb.addIdea(item);
+        const saved = await sqlDb.addIdea(item);
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true, item: saved }));
       } catch (err) {
@@ -563,7 +604,7 @@ const server = http.createServer(async (req, res) => {
     const id = pathname.replace('/api/ideas/', '');
     const body = await getRequestBody(req);
     if (body.status) {
-      sqlDb.updateIdeaStatus(id, body.status);
+      await sqlDb.updateIdeaStatus(id, body.status);
     }
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ success: true }));
@@ -573,7 +614,7 @@ const server = http.createServer(async (req, res) => {
   // --- API 4: ĐIỂM DANH AI FACEID & QR (/api/checkin) ---
   if (pathname === '/api/checkin') {
     if (method === 'GET') {
-      const roster = sqlDb.getAttendanceList();
+      const roster = await sqlDb.getAttendanceList();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(roster));
       return;
@@ -582,7 +623,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const body = await getRequestBody(req); // { id, name, hamlet, method }
         const searchKey = body.id || body.qrData || body.code;
-        const found = sqlDb.checkinDelegate(searchKey, body.name, body.hamlet, body.method || 'FaceID');
+        const found = await sqlDb.checkinDelegate(searchKey, body.name, body.hamlet, body.method || 'FaceID');
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true, delegate: found }));
       } catch (err) {
@@ -597,8 +638,8 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/checkin/delegate' && method === 'POST') {
     try {
       const body = await getRequestBody(req);
-      sqlDb.upsertDelegate(body);
-      const roster = sqlDb.getAttendanceList();
+      await sqlDb.upsertDelegate(body);
+      const roster = await sqlDb.getAttendanceList();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ success: true, roster }));
     } catch (err) {
@@ -610,10 +651,9 @@ const server = http.createServer(async (req, res) => {
 
   // Xóa Đại biểu
   if (pathname.startsWith('/api/checkin/delegate/') && method === 'DELETE') {
-    const delId = pathname.replace('/api/checkin/delegate/', '');
-    sqlDb.db.prepare('DELETE FROM attendance WHERE id = ?').run(delId);
-    sqlDb.syncAttendanceJson?.();
-    const roster = sqlDb.getAttendanceList();
+    const delId = decodeURIComponent(pathname.replace('/api/checkin/delegate/', ''));
+    await sqlDb.deleteDelegate(delId);
+    const roster = await sqlDb.getAttendanceList();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ success: true, roster }));
     return;
@@ -622,18 +662,21 @@ const server = http.createServer(async (req, res) => {
   // --- API 5: TRẠNG THÁI CƠ SỞ DỮ LIỆU SQL (/api/sql/status) ---
   if (pathname === '/api/sql/status' && method === 'GET') {
     try {
-      const users = sqlDb.getAllUsers().length;
-      const volunteers = sqlDb.getVolunteers().length;
-      const ideas = sqlDb.getIdeas().length;
-      const attendance = sqlDb.getAttendanceList().length;
+      const users = (await sqlDb.getAllUsers()).length;
+      const volunteers = (await sqlDb.getVolunteers()).length;
+      const ideas = (await sqlDb.getIdeas()).length;
+      const attendance = (await sqlDb.getAttendanceList()).length;
+      const dbMode = sqlDb.getDbMode();
       const dbPath = path.join(DATA_DIR, 'hoakhanh.db');
       const dbStats = fs.existsSync(dbPath) ? fs.statSync(dbPath) : { size: 0 };
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         success: true,
-        type: 'SQLite 3 (Cơ sở dữ liệu SQL nhúng chuẩn ACID)',
-        path: 'data/hoakhanh.db',
+        type: dbMode === 'turso_cloud' ? 'Turso Cloud LibSQL (Lưu trữ vĩnh viễn trên Đám Mây)' : 'SQLite 3 (Cơ sở dữ liệu nhúng chuẩn ACID)',
+        mode: dbMode,
+        isCloud: dbMode === 'turso_cloud',
+        path: dbMode === 'turso_cloud' ? (process.env.TURSO_DATABASE_URL || 'Turso Cloud') : 'data/hoakhanh.db',
         sizeKb: (dbStats.size / 1024).toFixed(1),
         tables: {
           users,
@@ -641,7 +684,9 @@ const server = http.createServer(async (req, res) => {
           ideas,
           attendance
         },
-        message: 'Cơ sở dữ liệu SQL SQLite đang hoạt động ổn định!'
+        message: dbMode === 'turso_cloud'
+          ? 'Cơ sở dữ liệu đám mây Turso đang hoạt động! Dữ liệu được bảo toàn vĩnh viễn không bị mất khi Render khởi động lại.'
+          : 'Cơ sở dữ liệu SQL SQLite đang hoạt động ổn định!'
       }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -652,9 +697,8 @@ const server = http.createServer(async (req, res) => {
 
   // Reset điểm danh
   if (pathname === '/api/checkin/reset' && method === 'POST') {
-    sqlDb.db.prepare('UPDATE attendance SET checked_in = 0, checkin_time = NULL, method = NULL').run();
-    sqlDb.syncAttendanceJson?.();
-    const roster = sqlDb.getAttendanceList();
+    await sqlDb.resetAttendance();
+    const roster = await sqlDb.getAttendanceList();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ success: true, message: 'Đã thiết lập lại trạng thái điểm danh!', roster }));
     return;
@@ -723,11 +767,21 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`==================================================================`);
-  console.log(` CỔNG THÔNG TIN THANH NIÊN XÃ HÒA KHÁNH (TÂY NINH)`);
-  console.log(` Máy chủ đang chạy ổn định tại: http://localhost:${PORT}`);
-  console.log(` Trang Quản trị Admin:          http://localhost:${PORT}/admin.html`);
-  console.log(` Cơ sở dữ liệu:                 SQLite (SQL chuẩn ACID: data/hoakhanh.db)`);
-  console.log(`==================================================================`);
-});
+(async () => {
+  try {
+    await sqlDb.initDb();
+  } catch (err) {
+    console.error('Lỗi khi khởi tạo database:', err);
+  }
+
+  server.listen(PORT, () => {
+    const isCloud = sqlDb.getDbMode() === 'turso_cloud';
+    console.log(`==================================================================`);
+    console.log(` CỔNG THÔNG TIN THANH NIÊN XÃ HÒA KHÁNH (TÂY NINH)`);
+    console.log(` Nghiên cứu & phát triển: Lương Tấn Phát`);
+    console.log(` Máy chủ đang chạy tại:         http://localhost:${PORT}`);
+    console.log(` Trang Quản trị Admin:          http://localhost:${PORT}/admin.html`);
+    console.log(` Cơ sở dữ liệu:                 ${isCloud ? 'TURSO CLOUD SQL (Dữ liệu vĩnh viễn trên Đám Mây)' : 'SQLite 3 Local (data/hoakhanh.db)'}`);
+    console.log(`==================================================================`);
+  });
+})();

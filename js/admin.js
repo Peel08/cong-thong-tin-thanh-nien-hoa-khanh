@@ -176,6 +176,24 @@ async function loadAllData() {
     renderVolunteersTable();
     renderIdeasTable();
     renderAttendanceTable();
+
+    // Cập nhật trạng thái CSDL (Turso Cloud hoặc SQLite Local)
+    fetch('/api/sql/status').then(r => r.json()).then(s => {
+      const badge = document.getElementById('db-status-badge');
+      if (badge && s.success) {
+        if (s.isCloud) {
+          badge.innerHTML = '☁️ CSDL: Turso Cloud (Vĩnh viễn)';
+          badge.style.background = 'rgba(59, 130, 246, 0.15)';
+          badge.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+          badge.style.color = '#60a5fa';
+        } else {
+          badge.innerHTML = '🗄️ CSDL: SQLite (hoakhanh.db)';
+          badge.style.background = 'rgba(16, 185, 129, 0.15)';
+          badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          badge.style.color = '#34d399';
+        }
+      }
+    }).catch(() => {});
   } catch (err) {
     console.error('Lỗi tải dữ liệu:', err);
     showToast('Lỗi kết nối máy chủ!', 'warning');

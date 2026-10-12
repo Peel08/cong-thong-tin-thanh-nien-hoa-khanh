@@ -368,7 +368,7 @@ function initIdeaForm() {
       item.style.cssText = 'background: rgba(5,18,40,0.7); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 0.85rem;';
       item.innerHTML = `
         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-          <strong style="color: var(--union-cyan);">${idea.author} (${idea.hamlet})</strong>
+          <strong style="color: var(--union-cyan);">${idea.fullName || idea.author || 'Ẩn danh'} (${idea.hamlet || ''})</strong>
           <span style="font-size: 0.72rem; color: var(--text-muted);">${idea.createdAt}</span>
         </div>
         <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">💡 ${idea.title}</div>
@@ -380,13 +380,13 @@ function initIdeaForm() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const author = document.getElementById('idea-author').value;
+    const fullName = document.getElementById('idea-author').value;
     const hamlet = document.getElementById('idea-hamlet').value;
     const title = document.getElementById('idea-title').value;
     const topic = document.getElementById('idea-topic').value;
     const content = document.getElementById('idea-content').value;
 
-    const payload = { author, hamlet, title, topic, content };
+    const payload = { fullName, hamlet, title, topic, content };
 
     try {
       await fetch('/api/ideas', {

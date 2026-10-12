@@ -19,6 +19,7 @@
   "author": "Đoàn TNCS Hồ Chí Minh Xã Hòa Khánh",
   "license": "ISC",
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "nodemailer": "^10.1.0"
   }
 }
