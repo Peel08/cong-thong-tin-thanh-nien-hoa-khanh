@@ -7,6 +7,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const sqlDb = require('./db.js');
 
 const PORT = process.env.PORT || 8080;
 const BASE_DIR = __dirname;
@@ -210,10 +211,9 @@ const server = http.createServer(async (req, res) => {
       const username = (body.username || '').trim().toLowerCase();
       const password = (body.password || '').trim();
 
-      const users = readJson('users.json', []);
-      const user = users.find(u => u.username.toLowerCase() === username && u.password === password);
+      const user = sqlDb.findUserByUsername(username);
 
-      if (!user) {
+      if (!user || user.password !== password) {
         res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: false, message: 'Tên đăng nhập hoặc mật khẩu không chính xác!' }));
         return;
@@ -349,52 +349,17 @@ const server = http.createServer(async (req, res) => {
       // Xác thực OTP thành công -> Hủy mã trong cache để không dùng lại
       otpCache.delete(email);
 
-      // Kiểm tra tài khoản: nếu đã tồn tại đoàn viên có cùng số điện thoại/username hoặc email, cập nhật thông tin & mật khẩu
-      const users = readJson('users.json', []);
-      const existingIdx = users.findIndex(u => (u.username.toLowerCase() === username.toLowerCase() || (u.email || '').toLowerCase() === email) && u.role !== 'admin');
+      // Kiểm tra tài khoản bằng truy vấn SQL (SQLite)
+      const existingUser = sqlDb.findUserByUsername(username) || sqlDb.findUserByEmail(email);
 
-      if (existingIdx >= 0) {
-        users[existingIdx].password = password;
-        users[existingIdx].fullName = fullName;
-        users[existingIdx].hamlet = hamlet;
-        users[existingIdx].phone = phone;
-        users[existingIdx].email = email;
-        users[existingIdx].isEmailVerified = true;
-        users[existingIdx].verifiedAt = new Date().toLocaleString('vi-VN');
-        writeJson('users.json', users);
-
-        const updatedUser = users[existingIdx];
-        const token = 'SEC-' + Buffer.from(updatedUser.username + ':' + Date.now() + ':member').toString('base64');
-        const safeUser = {
-          id: updatedUser.id,
-          username: updatedUser.username,
-          fullName: updatedUser.fullName,
-          role: 'member',
-          hamlet: updatedUser.hamlet,
-          phone: updatedUser.phone,
-          email: updatedUser.email,
-          isEmailVerified: true
-        };
-
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({
-          success: true,
-          token,
-          user: safeUser,
-          message: 'Cập nhật tài khoản Đoàn viên và xác thực Gmail OTP thành công!'
-        }));
-        return;
-      }
-
-      // Kiểm tra nếu tên đăng nhập là admin
-      if (users.some(u => u.username.toLowerCase() === username && u.role === 'admin')) {
+      if (existingUser && existingUser.role === 'admin') {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: false, message: 'Tên đăng nhập này thuộc về Quản trị viên!' }));
         return;
       }
 
-      const newUser = {
-        id: 'USR-' + Date.now(),
+      const userData = {
+        id: existingUser ? existingUser.id : ('USR-' + Date.now()),
         username: username,
         password: password,
         fullName: fullName,
@@ -404,30 +369,31 @@ const server = http.createServer(async (req, res) => {
         email: email,
         isEmailVerified: true,
         verifiedAt: new Date().toLocaleString('vi-VN'),
-        createdAt: new Date().toLocaleString('vi-VN')
+        createdAt: existingUser ? existingUser.createdAt : new Date().toLocaleString('vi-VN')
       };
 
-      users.push(newUser);
-      writeJson('users.json', users);
+      sqlDb.upsertUser(userData);
 
-      const token = 'SEC-' + Buffer.from(newUser.username + ':' + Date.now() + ':member').toString('base64');
+      const token = 'SEC-' + Buffer.from(userData.username + ':' + Date.now() + ':member').toString('base64');
       const safeUser = {
-        id: newUser.id,
-        username: newUser.username,
-        fullName: newUser.fullName,
+        id: userData.id,
+        username: userData.username,
+        fullName: userData.fullName,
         role: 'member',
-        hamlet: newUser.hamlet,
-        phone: newUser.phone,
-        email: newUser.email,
+        hamlet: userData.hamlet,
+        phone: userData.phone,
+        email: userData.email,
         isEmailVerified: true
       };
 
-      res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         success: true,
         token,
         user: safeUser,
-        message: 'Đăng ký tài khoản Đoàn viên và xác thực Gmail OTP thành công!'
+        message: existingUser
+          ? 'Cập nhật tài khoản Đoàn viên và xác thực Gmail OTP thành công (Cơ sở dữ liệu SQL)!'
+          : 'Đăng ký tài khoản Đoàn viên và xác thực Gmail OTP thành công (Cơ sở dữ liệu SQL)!'
       }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -437,18 +403,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (pathname === '/api/auth/users' && method === 'GET') {
-    const users = readJson('users.json', []);
-    const safeUsers = users.map(u => ({
-      id: u.id,
-      username: u.username,
-      fullName: u.fullName,
-      role: u.role,
-      hamlet: u.hamlet,
-      phone: u.phone,
-      email: u.email || 'Chưa liên kết',
-      isEmailVerified: !!u.isEmailVerified,
-      createdAt: u.createdAt
-    }));
+    const safeUsers = sqlDb.getAllUsers();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(safeUsers));
     return;
@@ -553,7 +508,7 @@ const server = http.createServer(async (req, res) => {
   // --- API 2: ĐĂNG KÝ TÌNH NGUYỆN (/api/volunteers) ---
   if (pathname === '/api/volunteers') {
     if (method === 'GET') {
-      const list = readJson('volunteers.json', []);
+      const list = sqlDb.getVolunteers();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(list));
       return;
@@ -561,14 +516,9 @@ const server = http.createServer(async (req, res) => {
     if (method === 'POST') {
       try {
         const item = await getRequestBody(req);
-        item.id = 'VOL-' + Date.now();
-        item.createdAt = new Date().toLocaleString('vi-VN');
-        const list = readJson('volunteers.json', []);
-        list.push(item);
-        writeJson('volunteers.json', list);
-
+        const saved = sqlDb.addVolunteer(item);
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: true, item }));
+        res.end(JSON.stringify({ success: true, item: saved }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: err.message }));
@@ -580,9 +530,7 @@ const server = http.createServer(async (req, res) => {
   // Xóa đăng ký tình nguyện
   if (pathname.startsWith('/api/volunteers/') && method === 'DELETE') {
     const id = pathname.replace('/api/volunteers/', '');
-    let list = readJson('volunteers.json', []);
-    list = list.filter(v => v.id !== id);
-    writeJson('volunteers.json', list);
+    sqlDb.deleteVolunteer(id);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ success: true }));
     return;
@@ -591,7 +539,7 @@ const server = http.createServer(async (req, res) => {
   // --- API 3: HÒM THƯ HIẾN KẾ THANH NIÊN (/api/ideas) ---
   if (pathname === '/api/ideas') {
     if (method === 'GET') {
-      const list = readJson('ideas.json', []);
+      const list = sqlDb.getIdeas();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(list));
       return;
@@ -599,15 +547,9 @@ const server = http.createServer(async (req, res) => {
     if (method === 'POST') {
       try {
         const item = await getRequestBody(req);
-        item.id = 'IDEA-' + Date.now();
-        item.createdAt = new Date().toLocaleDateString('vi-VN');
-        item.status = item.status || 'Đã tiếp nhận';
-        const list = readJson('ideas.json', []);
-        list.push(item);
-        writeJson('ideas.json', list);
-
+        const saved = sqlDb.addIdea(item);
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: true, item }));
+        res.end(JSON.stringify({ success: true, item: saved }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: err.message }));
@@ -620,11 +562,8 @@ const server = http.createServer(async (req, res) => {
   if (pathname.startsWith('/api/ideas/') && (method === 'PUT' || method === 'POST')) {
     const id = pathname.replace('/api/ideas/', '');
     const body = await getRequestBody(req);
-    const list = readJson('ideas.json', []);
-    const target = list.find(i => i.id === id);
-    if (target) {
-      if (body.status) target.status = body.status;
-      writeJson('ideas.json', list);
+    if (body.status) {
+      sqlDb.updateIdeaStatus(id, body.status);
     }
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ success: true }));
@@ -634,40 +573,16 @@ const server = http.createServer(async (req, res) => {
   // --- API 4: ĐIỂM DANH AI FACEID & QR (/api/checkin) ---
   if (pathname === '/api/checkin') {
     if (method === 'GET') {
-      const roster = readJson('attendance.json', []);
+      const roster = sqlDb.getAttendanceList();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(roster));
       return;
     }
     if (method === 'POST') {
       try {
-        const body = await getRequestBody(req); // { id, name, hamlet }
-        const roster = readJson('attendance.json', []);
-        const now = new Date();
-        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
+        const body = await getRequestBody(req); // { id, name, hamlet, method }
         const searchKey = body.id || body.qrData || body.code;
-        let found = roster.find(r => (searchKey && (r.id === searchKey || r.qrData === searchKey)) || (body.name && r.name.toLowerCase() === body.name.toLowerCase()));
-        if (found) {
-          found.checkedIn = true;
-          found.checkinTime = timeStr;
-          found.method = body.method || 'FaceID';
-        } else if (body.name) {
-          found = {
-            id: 'HK-ADD-' + Date.now().toString().slice(-4),
-            name: body.name,
-            hamlet: body.hamlet || 'Ấp Thuận Hòa 1',
-            role: body.role || 'Đại biểu thanh niên',
-            avatar: body.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-            qrData: 'HK-ADD-' + Date.now().toString().slice(-4),
-            checkedIn: true,
-            checkinTime: timeStr,
-            method: body.method || 'FaceID'
-          };
-          roster.push(found);
-        }
-        writeJson('attendance.json', roster);
-
+        const found = sqlDb.checkinDelegate(searchKey, body.name, body.hamlet, body.method || 'FaceID');
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ success: true, delegate: found }));
       } catch (err) {
@@ -682,25 +597,8 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/checkin/delegate' && method === 'POST') {
     try {
       const body = await getRequestBody(req);
-      const roster = readJson('attendance.json', []);
-      let index = roster.findIndex(r => r.id === body.id);
-      if (index !== -1) {
-        roster[index] = { ...roster[index], ...body };
-      } else {
-        const newId = body.id || ('HK-DB-' + (roster.length + 1).toString().padStart(2, '0'));
-        const newDel = {
-          id: newId,
-          name: body.name,
-          hamlet: body.hamlet || 'Ấp Thuận Hòa 1',
-          role: body.role || 'Đại biểu thanh niên',
-          avatar: body.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
-          qrData: body.qrData || newId,
-          checkedIn: false,
-          checkinTime: null
-        };
-        roster.push(newDel);
-      }
-      writeJson('attendance.json', roster);
+      sqlDb.upsertDelegate(body);
+      const roster = sqlDb.getAttendanceList();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ success: true, roster }));
     } catch (err) {
@@ -713,28 +611,56 @@ const server = http.createServer(async (req, res) => {
   // Xóa Đại biểu
   if (pathname.startsWith('/api/checkin/delegate/') && method === 'DELETE') {
     const delId = pathname.replace('/api/checkin/delegate/', '');
-    let roster = readJson('attendance.json', []);
-    roster = roster.filter(r => r.id !== delId);
-    writeJson('attendance.json', roster);
+    sqlDb.db.prepare('DELETE FROM attendance WHERE id = ?').run(delId);
+    sqlDb.syncAttendanceJson?.();
+    const roster = sqlDb.getAttendanceList();
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ success: true, roster }));
     return;
   }
 
-  // Reset điểm danh
-  if (pathname === '/api/checkin/reset' && method === 'POST') {
-    const roster = readJson('attendance.json', []);
-    roster.forEach(r => {
-      r.checkedIn = false;
-      r.checkinTime = null;
-    });
-    writeJson('attendance.json', roster);
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ success: true }));
+  // --- API 5: TRẠNG THÁI CƠ SỞ DỮ LIỆU SQL (/api/sql/status) ---
+  if (pathname === '/api/sql/status' && method === 'GET') {
+    try {
+      const users = sqlDb.getAllUsers().length;
+      const volunteers = sqlDb.getVolunteers().length;
+      const ideas = sqlDb.getIdeas().length;
+      const attendance = sqlDb.getAttendanceList().length;
+      const dbPath = path.join(DATA_DIR, 'hoakhanh.db');
+      const dbStats = fs.existsSync(dbPath) ? fs.statSync(dbPath) : { size: 0 };
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        success: true,
+        type: 'SQLite 3 (Cơ sở dữ liệu SQL nhúng chuẩn ACID)',
+        path: 'data/hoakhanh.db',
+        sizeKb: (dbStats.size / 1024).toFixed(1),
+        tables: {
+          users,
+          volunteers,
+          ideas,
+          attendance
+        },
+        message: 'Cơ sở dữ liệu SQL SQLite đang hoạt động ổn định!'
+      }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
     return;
   }
 
-  // --- API 5: TẢI ẢNH THẬT LÊN MÁY CHỦ (/api/upload) ---
+  // Reset điểm danh
+  if (pathname === '/api/checkin/reset' && method === 'POST') {
+    sqlDb.db.prepare('UPDATE attendance SET checked_in = 0, checkin_time = NULL, method = NULL').run();
+    sqlDb.syncAttendanceJson?.();
+    const roster = sqlDb.getAttendanceList();
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ success: true, message: 'Đã thiết lập lại trạng thái điểm danh!', roster }));
+    return;
+  }
+
+  // --- API 6: TẢI ẢNH THẬT LÊN MÁY CHỦ (/api/upload) ---
   if (pathname === '/api/upload' && method === 'POST') {
     try {
       const body = await getRequestBody(req); // { filename, base64 }
@@ -802,6 +728,6 @@ server.listen(PORT, () => {
   console.log(` CỔNG THÔNG TIN THANH NIÊN XÃ HÒA KHÁNH (TÂY NINH)`);
   console.log(` Máy chủ đang chạy ổn định tại: http://localhost:${PORT}`);
   console.log(` Trang Quản trị Admin:          http://localhost:${PORT}/admin.html`);
-  console.log(` Cơ sở dữ liệu:                 ${DATA_DIR}`);
+  console.log(` Cơ sở dữ liệu:                 SQLite (SQL chuẩn ACID: data/hoakhanh.db)`);
   console.log(`==================================================================`);
 });

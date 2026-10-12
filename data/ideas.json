@@ -1,32 +1,46 @@
 [
   {
-    "id": "IDEA-201",
-    "author": "Trần Văn Hậu",
-    "hamlet": "Ấp Thuận Hòa 2",
-    "title": "Mô hình số hóa mã QR tại các Bia tưởng niệm và di tích lịch sử xã Hòa Khánh",
-    "topic": "Chuyển đổi số & Cải cách hành chính",
-    "content": "Đề xuất Đoàn xã phối hợp với Đoàn cấp trên gắn bảng mã QR tại các địa chỉ đỏ, bia di tích lịch sử trên địa bàn xã để thế hệ trẻ và du khách dễ dàng tra cứu lịch sử qua điện thoại.",
+    "id": "IDEA-1791766424534",
+    "fullName": "Lương Tấn Phát",
+    "phone": "0947463036",
+    "hamlet": "Ấp Thuận Hòa 1",
+    "email": "",
+    "title": "Số hóa toàn diện dữ liệu Đoàn",
+    "content": "Áp dụng SQLite chuẩn ACID cho toàn bộ cổng thông tin.",
     "status": "Đã tiếp nhận",
-    "createdAt": "10/10/2026"
+    "createdAt": "12/10/2026"
   },
   {
     "id": "IDEA-202",
-    "author": "Nguyễn Thị Kim Ngân",
+    "fullName": "",
+    "phone": "",
     "hamlet": "Ấp Tân Bình",
+    "email": "",
     "title": "Thành lập Câu lạc bộ Thanh niên Livestream Nông sản sạch Tây Ninh",
-    "topic": "Phát triển kinh tế & Khởi nghiệp thanh niên",
     "content": "Đoàn xã hỗ trợ tập huấn kỹ năng bán hàng trên TikTok Shop cho ĐVTN có vườn trái cây, xưởng bánh tráng để đưa đặc sản quê hương tiếp cận khách hàng cả nước.",
     "status": "Đã duyệt triển khai",
     "createdAt": "11/10/2026"
   },
   {
-    "author": "Tran Minh Quan",
-    "hamlet": "Ấp Thuận Hòa 1",
-    "title": "So hoa ma QR di tich lich su",
-    "topic": "Chuyển đổi số & Cải cách hành chính",
-    "content": "Ung dung QR code de quang ba di tich lich su xa Hoa Khanh",
     "id": "IDEA-1791702394740",
-    "createdAt": "11/10/2026",
-    "status": "Đang nghiên cứu"
+    "fullName": "",
+    "phone": "",
+    "hamlet": "Ấp Thuận Hòa 1",
+    "email": "",
+    "title": "So hoa ma QR di tich lich su",
+    "content": "Ung dung QR code de quang ba di tich lich su xa Hoa Khanh",
+    "status": "Đang nghiên cứu",
+    "createdAt": "11/10/2026"
+  },
+  {
+    "id": "IDEA-201",
+    "fullName": "",
+    "phone": "",
+    "hamlet": "Ấp Thuận Hòa 2",
+    "email": "",
+    "title": "Mô hình số hóa mã QR tại các Bia tưởng niệm và di tích lịch sử xã Hòa Khánh",
+    "content": "Đề xuất Đoàn xã phối hợp với Đoàn cấp trên gắn bảng mã QR tại các địa chỉ đỏ, bia di tích lịch sử trên địa bàn xã để thế hệ trẻ và du khách dễ dàng tra cứu lịch sử qua điện thoại.",
+    "status": "Đã tiếp nhận",
+    "createdAt": "10/10/2026"
   }
 ]
